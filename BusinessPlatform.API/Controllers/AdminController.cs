@@ -174,6 +174,324 @@ namespace BusinessPlatform.API.Controllers
             var orders = await _context.ShoppingOrders.Find(FilterDefinition<ShoppingOrder>.Empty).ToListAsync();
             return Ok(orders);
         }
+
+        // Products CRUD
+        [HttpPost("products")]
+        [Authorize]
+        public async Task<IActionResult> CreateProduct([FromBody] Product product)
+        {
+            product.Id = null;
+            product.CreatedAt = DateTime.UtcNow;
+            await _context.Products.InsertOneAsync(product);
+            return Ok(new { message = "Product created successfully", product });
+        }
+
+        [HttpPut("products/{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateProduct(string id, [FromBody] Product product)
+        {
+            product.Id = id;
+            var result = await _context.Products.ReplaceOneAsync(p => p.Id == id, product);
+            if (result.MatchedCount == 0)
+            {
+                return NotFound(new { message = "Product not found" });
+            }
+            return Ok(new { message = "Product updated successfully" });
+        }
+
+        [HttpDelete("products/{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteProduct(string id)
+        {
+            var result = await _context.Products.DeleteOneAsync(p => p.Id == id);
+            if (result.DeletedCount == 0)
+            {
+                return NotFound(new { message = "Product not found" });
+            }
+            return Ok(new { message = "Product deleted successfully" });
+        }
+
+        [HttpPatch("products/{id}/status")]
+        [Authorize]
+        public async Task<IActionResult> UpdateProductStatus(string id, [FromBody] StatusUpdateRequest request)
+        {
+            var update = Builders<Product>.Update.Set(p => p.Status, request.Status);
+            var result = await _context.Products.UpdateOneAsync(p => p.Id == id, update);
+            if (result.MatchedCount == 0)
+            {
+                return NotFound(new { message = "Product not found" });
+            }
+            return Ok(new { message = "Product status updated successfully" });
+        }
+
+        // Ads CRUD
+        [HttpPost("ads")]
+        [Authorize]
+        public async Task<IActionResult> CreateAd([FromBody] Advertisement ad)
+        {
+            ad.Id = null;
+            ad.CreatedAt = DateTime.UtcNow;
+            await _context.Advertisements.InsertOneAsync(ad);
+            return Ok(new { message = "Advertisement created successfully", ad });
+        }
+
+        [HttpPut("ads/{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateAd(string id, [FromBody] Advertisement ad)
+        {
+            ad.Id = id;
+            var result = await _context.Advertisements.ReplaceOneAsync(a => a.Id == id, ad);
+            if (result.MatchedCount == 0)
+            {
+                return NotFound(new { message = "Advertisement not found" });
+            }
+            return Ok(new { message = "Advertisement updated successfully" });
+        }
+
+        [HttpDelete("ads/{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteAd(string id)
+        {
+            var result = await _context.Advertisements.DeleteOneAsync(a => a.Id == id);
+            if (result.DeletedCount == 0)
+            {
+                return NotFound(new { message = "Advertisement not found" });
+            }
+            return Ok(new { message = "Advertisement deleted successfully" });
+        }
+
+        [HttpPatch("ads/{id}/status")]
+        [Authorize]
+        public async Task<IActionResult> UpdateAdStatus(string id, [FromBody] StatusUpdateRequest request)
+        {
+            var update = Builders<Advertisement>.Update.Set(a => a.Status, request.Status);
+            var result = await _context.Advertisements.UpdateOneAsync(a => a.Id == id, update);
+            if (result.MatchedCount == 0)
+            {
+                return NotFound(new { message = "Advertisement not found" });
+            }
+            return Ok(new { message = "Advertisement status updated successfully" });
+        }
+
+        // Jobs CRUD
+        [HttpPost("jobs")]
+        [Authorize]
+        public async Task<IActionResult> CreateJob([FromBody] Job job)
+        {
+            job.Id = null;
+            job.CreatedAt = DateTime.UtcNow;
+            await _context.Jobs.InsertOneAsync(job);
+            return Ok(new { message = "Job created successfully", job });
+        }
+
+        [HttpPut("jobs/{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateJob(string id, [FromBody] Job job)
+        {
+            job.Id = id;
+            var result = await _context.Jobs.ReplaceOneAsync(j => j.Id == id, job);
+            if (result.MatchedCount == 0)
+            {
+                return NotFound(new { message = "Job not found" });
+            }
+            return Ok(new { message = "Job updated successfully" });
+        }
+
+        [HttpDelete("jobs/{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteJob(string id)
+        {
+            var result = await _context.Jobs.DeleteOneAsync(j => j.Id == id);
+            if (result.DeletedCount == 0)
+            {
+                return NotFound(new { message = "Job not found" });
+            }
+            return Ok(new { message = "Job deleted successfully" });
+        }
+
+        [HttpPatch("jobs/{id}/status")]
+        [Authorize]
+        public async Task<IActionResult> UpdateJobStatus(string id, [FromBody] StatusUpdateRequest request)
+        {
+            var update = Builders<Job>.Update.Set(j => j.Status, request.Status);
+            var result = await _context.Jobs.UpdateOneAsync(j => j.Id == id, update);
+            if (result.MatchedCount == 0)
+            {
+                return NotFound(new { message = "Job not found" });
+            }
+            return Ok(new { message = "Job status updated successfully" });
+        }
+
+        // Transports CRUD
+        [HttpPost("transports")]
+        [Authorize]
+        public async Task<IActionResult> CreateTransport([FromBody] Transport transport)
+        {
+            transport.Id = null;
+            transport.CreatedAt = DateTime.UtcNow;
+            await _context.Transports.InsertOneAsync(transport);
+            return Ok(new { message = "Transport created successfully", transport });
+        }
+
+        [HttpPut("transports/{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateTransport(string id, [FromBody] Transport transport)
+        {
+            transport.Id = id;
+            var result = await _context.Transports.ReplaceOneAsync(t => t.Id == id, transport);
+            if (result.MatchedCount == 0)
+            {
+                return NotFound(new { message = "Transport not found" });
+            }
+            return Ok(new { message = "Transport updated successfully" });
+        }
+
+        [HttpDelete("transports/{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteTransport(string id)
+        {
+            var result = await _context.Transports.DeleteOneAsync(t => t.Id == id);
+            if (result.DeletedCount == 0)
+            {
+                return NotFound(new { message = "Transport not found" });
+            }
+            return Ok(new { message = "Transport deleted successfully" });
+        }
+
+        [HttpPatch("transports/{id}/status")]
+        [Authorize]
+        public async Task<IActionResult> UpdateTransportStatus(string id, [FromBody] StatusUpdateRequest request)
+        {
+            var update = Builders<Transport>.Update.Set(t => t.Status, request.Status);
+            var result = await _context.Transports.UpdateOneAsync(t => t.Id == id, update);
+            if (result.MatchedCount == 0)
+            {
+                return NotFound(new { message = "Transport not found" });
+            }
+            return Ok(new { message = "Transport status updated successfully" });
+        }
+
+        // Packages CRUD
+        [HttpPost("packages")]
+        [Authorize]
+        public async Task<IActionResult> CreatePackage([FromBody] TravelPackage package)
+        {
+            package.Id = null;
+            package.CreatedAt = DateTime.UtcNow;
+            await _context.TravelPackages.InsertOneAsync(package);
+            return Ok(new { message = "Travel package created successfully", package });
+        }
+
+        [HttpPut("packages/{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdatePackage(string id, [FromBody] TravelPackage package)
+        {
+            package.Id = id;
+            var result = await _context.TravelPackages.ReplaceOneAsync(p => p.Id == id, package);
+            if (result.MatchedCount == 0)
+            {
+                return NotFound(new { message = "Travel package not found" });
+            }
+            return Ok(new { message = "Travel package updated successfully" });
+        }
+
+        [HttpDelete("packages/{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeletePackage(string id)
+        {
+            var result = await _context.TravelPackages.DeleteOneAsync(p => p.Id == id);
+            if (result.DeletedCount == 0)
+            {
+                return NotFound(new { message = "Travel package not found" });
+            }
+            return Ok(new { message = "Travel package deleted successfully" });
+        }
+
+        [HttpPatch("packages/{id}/status")]
+        [Authorize]
+        public async Task<IActionResult> UpdatePackageStatus(string id, [FromBody] StatusUpdateRequest request)
+        {
+            var update = Builders<TravelPackage>.Update.Set(p => p.Status, request.Status);
+            var result = await _context.TravelPackages.UpdateOneAsync(p => p.Id == id, update);
+            if (result.MatchedCount == 0)
+            {
+                return NotFound(new { message = "Travel package not found" });
+            }
+            return Ok(new { message = "Travel package status updated successfully" });
+        }
+
+        // Movies CRUD
+        [HttpPost("movies")]
+        [Authorize]
+        public async Task<IActionResult> CreateMovie([FromBody] Movie movie)
+        {
+            movie.Id = null;
+            movie.CreatedAt = DateTime.UtcNow;
+            await _context.Movies.InsertOneAsync(movie);
+            return Ok(new { message = "Movie created successfully", movie });
+        }
+
+        [HttpPut("movies/{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateMovie(string id, [FromBody] Movie movie)
+        {
+            movie.Id = id;
+            var result = await _context.Movies.ReplaceOneAsync(m => m.Id == id, movie);
+            if (result.MatchedCount == 0)
+            {
+                return NotFound(new { message = "Movie not found" });
+            }
+            return Ok(new { message = "Movie updated successfully" });
+        }
+
+        [HttpDelete("movies/{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteMovie(string id)
+        {
+            var result = await _context.Movies.DeleteOneAsync(m => m.Id == id);
+            if (result.DeletedCount == 0)
+            {
+                return NotFound(new { message = "Movie not found" });
+            }
+            return Ok(new { message = "Movie deleted successfully" });
+        }
+
+        [HttpPatch("movies/{id}/status")]
+        [Authorize]
+        public async Task<IActionResult> UpdateMovieStatus(string id, [FromBody] StatusUpdateRequest request)
+        {
+            var update = Builders<Movie>.Update.Set(m => m.Status, request.Status);
+            var result = await _context.Movies.UpdateOneAsync(m => m.Id == id, update);
+            if (result.MatchedCount == 0)
+            {
+                return NotFound(new { message = "Movie not found" });
+            }
+            return Ok(new { message = "Movie status updated successfully" });
+        }
+
+        // User Activate/Deactivate
+        [HttpPatch("users/{id}/status")]
+        [Authorize]
+        public async Task<IActionResult> UpdateUserStatus(string id, [FromBody] UserStatusUpdateRequest request)
+        {
+            var update = Builders<User>.Update.Set(u => u.IsActive, request.IsActive);
+            var result = await _context.Users.UpdateOneAsync(u => u.Id == id, update);
+            if (result.MatchedCount == 0)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+            return Ok(new { message = "User status updated successfully" });
+        }
+    }
+
+    public class StatusUpdateRequest
+    {
+        public string Status { get; set; } = string.Empty;
+    }
+
+    public class UserStatusUpdateRequest
+    {
+        public bool IsActive { get; set; }
     }
 
     public class LoginRequest

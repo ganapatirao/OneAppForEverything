@@ -109,8 +109,39 @@ export const adminApi = {
   getUser: (id) => api.get(`/admin/users/${id}`),
   updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
   deleteUser: (id) => api.delete(`/admin/users/${id}`),
+  updateUserStatus: (id, isActive) => api.patch(`/admin/users/${id}/status`, { isActive }),
   getDashboard: () => api.get('/admin/dashboard'),
   getAllOrders: () => api.get('/admin/orders/all'),
+  // Products
+  createProduct: (data) => api.post('/admin/products', data),
+  updateProduct: (id, data) => api.put(`/admin/products/${id}`, data),
+  deleteProduct: (id) => api.delete(`/admin/products/${id}`),
+  updateProductStatus: (id, status) => api.patch(`/admin/products/${id}/status`, { status }),
+  // Ads
+  createAd: (data) => api.post('/admin/ads', data),
+  updateAd: (id, data) => api.put(`/admin/ads/${id}`, data),
+  deleteAd: (id) => api.delete(`/admin/ads/${id}`),
+  updateAdStatus: (id, status) => api.patch(`/admin/ads/${id}/status`, { status }),
+  // Jobs
+  createJob: (data) => api.post('/admin/jobs', data),
+  updateJob: (id, data) => api.put(`/admin/jobs/${id}`, data),
+  deleteJob: (id) => api.delete(`/admin/jobs/${id}`),
+  updateJobStatus: (id, status) => api.patch(`/admin/jobs/${id}/status`, { status }),
+  // Transports
+  createTransport: (data) => api.post('/admin/transports', data),
+  updateTransport: (id, data) => api.put(`/admin/transports/${id}`, data),
+  deleteTransport: (id) => api.delete(`/admin/transports/${id}`),
+  updateTransportStatus: (id, status) => api.patch(`/admin/transports/${id}/status`, { status }),
+  // Packages
+  createPackage: (data) => api.post('/admin/packages', data),
+  updatePackage: (id, data) => api.put(`/admin/packages/${id}`, data),
+  deletePackage: (id) => api.delete(`/admin/packages/${id}`),
+  updatePackageStatus: (id, status) => api.patch(`/admin/packages/${id}/status`, { status }),
+  // Movies
+  createMovie: (data) => api.post('/admin/movies', data),
+  updateMovie: (id, data) => api.put(`/admin/movies/${id}`, data),
+  deleteMovie: (id) => api.delete(`/admin/movies/${id}`),
+  updateMovieStatus: (id, status) => api.patch(`/admin/movies/${id}/status`, { status }),
 };
 
 export default api;

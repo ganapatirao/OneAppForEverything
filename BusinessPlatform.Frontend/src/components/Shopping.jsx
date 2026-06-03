@@ -10,15 +10,6 @@ export default function Shopping({ onCartChange }) {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [showCheckout, setShowCheckout] = useState(false);
   const [showCartReview, setShowCartReview] = useState(false);
-  const [newProduct, setNewProduct] = useState({
-    name: '',
-    description: '',
-    price: '',
-    categoryName: '',
-    stock: '',
-    seller: '',
-    imageUrl: ''
-  });
 
   useEffect(() => {
     loadProducts();
@@ -89,32 +80,6 @@ export default function Shopping({ onCartChange }) {
     }
   };
 
-  const handleAddProduct = async (e) => {
-    e.preventDefault();
-    try {
-      await shoppingApi.createProduct({
-        ...newProduct,
-        price: parseFloat(newProduct.price),
-        stock: parseInt(newProduct.stock),
-        rating: 0,
-        reviewCount: 0
-      });
-      loadProducts();
-      setNewProduct({
-        name: '',
-        description: '',
-        price: '',
-        categoryName: '',
-        stock: '',
-        seller: '',
-        imageUrl: ''
-      });
-      alert('Product created successfully!');
-    } catch (error) {
-      console.error('Error creating product:', error);
-    }
-  };
-
   const handleCategoryChange = (category) => {
     setSelectedCategory(category);
   };
@@ -145,12 +110,13 @@ export default function Shopping({ onCartChange }) {
               <button
                 key={category.id}
                 onClick={() => handleCategoryChange(category.name)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap flex items-center gap-2 ${
                   selectedCategory === category.name
                     ? 'bg-blue-600 text-white'
                     : 'bg-white text-gray-700 hover:bg-gray-100'
                 }`}
               >
+                {category.imageUrl && <img src={category.imageUrl} alt={category.name} className="w-6 h-6 rounded-full object-cover" />}
                 {category.name}
               </button>
             ))}
@@ -182,33 +148,6 @@ export default function Shopping({ onCartChange }) {
             </div>
           ))}
         </div>
-
-        {/* Cart Review */}
-        {cart.length > 0 && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Your Cart ({cart.length} items)</h2>
-            <div className="space-y-4">
-              {cart.map((item) => {
-                const product = products.find(p => p.id === item.productId);
-                return (
-                  <div key={item.id} className="flex justify-between items-center border-b pb-4">
-                    <div>
-                      <p className="font-medium text-gray-800">{product?.name || 'Product'}</p>
-                      <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
-                    </div>
-                    <p className="font-bold text-blue-600">${(product?.price || 0) * item.quantity}</p>
-                  </div>
-                );
-              })}
-            </div>
-            <button
-              onClick={() => setShowCartReview(true)}
-              className="mt-4 w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-            >
-              Proceed to Checkout
-            </button>
-          </div>
-        )}
 
         {/* Order History */}
         {orders.length > 0 && (
@@ -246,99 +185,6 @@ export default function Shopping({ onCartChange }) {
             </div>
           </div>
         )}
-
-        {/* Add Product Form (Admin) */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Add New Product</h2>
-          <form onSubmit={handleAddProduct} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Product Name</label>
-              <input
-                type="text"
-                value={newProduct.name}
-                onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-              <textarea
-                value={newProduct.description}
-                onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                rows="3"
-                required
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Price</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={newProduct.price}
-                  onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Stock</label>
-                <input
-                  type="number"
-                  value={newProduct.stock}
-                  onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                <select
-                  value={newProduct.categoryName}
-                  onChange={(e) => setNewProduct({ ...newProduct, categoryName: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                >
-                  <option value="">Select Category</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.name}>{category.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Seller</label>
-                <input
-                  type="text"
-                  value={newProduct.seller}
-                  onChange={(e) => setNewProduct({ ...newProduct, seller: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
-              <input
-                type="url"
-                value={newProduct.imageUrl}
-                onChange={(e) => setNewProduct({ ...newProduct, imageUrl: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center"
-            >
-              <Plus size={20} className="mr-2" />
-              Add Product
-            </button>
-          </form>
-        </div>
       </div>
     </div>
   );
