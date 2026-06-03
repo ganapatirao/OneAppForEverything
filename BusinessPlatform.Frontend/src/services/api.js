@@ -36,6 +36,8 @@ export const shoppingApi = {
   addToCart: (data) => api.post('/shopping/cart', data),
   removeFromCart: (id) => api.delete(`/shopping/cart/${id}`),
   clearCart: (userId) => api.delete(`/shopping/cart/user/${userId}`),
+  getStates: () => api.get('/shopping/states'),
+  getDistricts: (stateCode) => api.get(`/shopping/districts/${stateCode}`),
 };
 
 // Advertising API

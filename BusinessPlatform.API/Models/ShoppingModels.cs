@@ -126,10 +126,39 @@ namespace BusinessPlatform.API.Models
         [BsonElement("shippingAddress")]
         public string ShippingAddress { get; set; } = string.Empty;
 
+        [BsonElement("billingAddress")]
+        public string BillingAddress { get; set; } = string.Empty;
+
         [BsonElement("paymentMethod")]
         public string PaymentMethod { get; set; } = string.Empty;
 
         [BsonElement("createdAt")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    }
+
+    public class State
+    {
+        [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string? Id { get; set; }
+
+        [BsonElement("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [BsonElement("code")]
+        public string Code { get; set; } = string.Empty;
+    }
+
+    public class District
+    {
+        [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string? Id { get; set; }
+
+        [BsonElement("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [BsonElement("stateCode")]
+        public string StateCode { get; set; } = string.Empty;
     }
 }

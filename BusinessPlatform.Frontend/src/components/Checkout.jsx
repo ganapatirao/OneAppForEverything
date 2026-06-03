@@ -1,8 +1,17 @@
-import { useState } from 'react';
-import { CreditCard, MapPin, User, Phone, Mail } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { CreditCard, MapPin, User, Phone, Mail, CheckCircle, ArrowRight, ArrowLeft, ShoppingBag, Truck, CreditCard as PaymentIcon } from 'lucide-react';
 import { shoppingApi } from '../services/api';
 
-export default function Checkout({ cart, total, onClose, onOrderSuccess }) {
+const steps = ['shipping', 'billing', 'payment', 'review', 'confirm'];
+
+export default function Checkout({ onClose, onOrderSuccess }) {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [cart, setCart] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [orderPlaced, setOrderPlaced] = useState(false);
+  const [orderId, setOrderId] = useState('');
+
   const [shippingInfo, setShippingInfo] = useState({
     fullName: '',
     email: '',
@@ -13,26 +22,152 @@ export default function Checkout({ cart, total, onClose, onOrderSuccess }) {
     zipCode: ''
   });
   const [billingInfo, setBillingInfo] = useState({
+    fullName: '',
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    sameAsShipping: true
+  });
+  const [paymentInfo, setPaymentInfo] = useState({
     cardNumber: '',
     cardName: '',
     expiryDate: '',
-    cvv: ''
+    cvv: '',
+    paymentMethod: 'credit-card'
   });
-  const [paymentMethod, setPaymentMethod] = useState('credit-card');
-  const [loading, setLoading] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [states, setStates] = useState([]);
+  const [districts, setDistricts] = useState([]);
 
-  const handleShippingChange = (e) => {
-    setShippingInfo({ ...shippingInfo, [e.target.name]: e.target.value });
+  useEffect(() => {
+    loadCart();
+    loadProducts();
+    loadStates();
+  }, []);
+
+  const loadCart = async () => {
+    try {
+      const userId = localStorage.getItem('userId');
+      if (userId) {
+        const response = await shoppingApi.getCart(userId);
+        setCart(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading cart:', error);
+    }
   };
 
-  const handleBillingChange = (e) => {
-    setBillingInfo({ ...billingInfo, [e.target.name]: e.target.value });
+  const loadProducts = async () => {
+    try {
+      const response = await shoppingApi.getProducts();
+      setProducts(response.data);
+    } catch (error) {
+      console.error('Error loading products:', error);
+    }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const loadStates = async () => {
+    try {
+      const response = await shoppingApi.getStates();
+      setStates(response.data);
+    } catch (error) {
+      console.error('Error loading states:', error);
+    }
+  };
+
+  const loadDistricts = async (stateCode) => {
+    try {
+      const response = await shoppingApi.getDistricts(stateCode);
+      setDistricts(response.data);
+    } catch (error) {
+      console.error('Error loading districts:', error);
+    }
+  };
+
+  const cartItems = cart.map((item) => {
+    const product = products.find(p => p.id === item.productId);
+    return {
+      ...item,
+      product,
+      totalPrice: (product?.price || 0) * item.quantity
+    };
+  });
+
+  const subtotal = cartItems.reduce((sum, item) => sum + item.totalPrice, 0);
+  const shipping = subtotal > 0 ? 5.99 : 0;
+  const tax = subtotal * 0.08;
+  const total = subtotal + shipping + tax;
+
+  const validateShipping = () => {
+    const newErrors = {};
+    if (!shippingInfo.fullName.trim()) newErrors.fullName = 'Full name is required';
+    if (!shippingInfo.email.trim()) newErrors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(shippingInfo.email)) newErrors.email = 'Invalid email format';
+    if (!shippingInfo.phone.trim()) newErrors.phone = 'Phone is required';
+    else if (!/^[6-9]\d{9}$/.test(shippingInfo.phone.replace(/\D/g, ''))) newErrors.phone = 'Invalid Indian phone number (must start with 6, 7, 8, or 9)';
+    if (!shippingInfo.address.trim()) newErrors.address = 'Address is required';
+    if (!shippingInfo.city.trim()) newErrors.city = 'District is required';
+    if (!shippingInfo.state.trim()) newErrors.state = 'State is required';
+    if (!shippingInfo.zipCode.trim()) newErrors.zipCode = 'PIN code is required';
+    else if (!/^\d{6}$/.test(shippingInfo.zipCode)) newErrors.zipCode = 'Invalid Indian PIN code (must be 6 digits)';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateBilling = () => {
+    if (billingInfo.sameAsShipping) return true;
+    const newErrors = {};
+    if (!billingInfo.fullName.trim()) newErrors.billingFullName = 'Full name is required';
+    if (!billingInfo.address.trim()) newErrors.billingAddress = 'Address is required';
+    if (!billingInfo.city.trim()) newErrors.billingCity = 'District is required';
+    if (!billingInfo.state.trim()) newErrors.billingState = 'State is required';
+    if (!billingInfo.zipCode.trim()) newErrors.billingZipCode = 'PIN code is required';
+    else if (!/^\d{6}$/.test(billingInfo.zipCode)) newErrors.billingZipCode = 'Invalid Indian PIN code (must be 6 digits)';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validatePayment = () => {
+    if (paymentInfo.paymentMethod === 'paypal') return true;
+    const newErrors = {};
+    if (!paymentInfo.cardNumber.trim()) newErrors.cardNumber = 'Card number is required';
+    else if (!/^\d{16}$/.test(paymentInfo.cardNumber.replace(/\D/g, ''))) newErrors.cardNumber = 'Invalid card number';
+    if (!paymentInfo.cardName.trim()) newErrors.cardName = 'Cardholder name is required';
+    if (!paymentInfo.expiryDate.trim()) newErrors.expiryDate = 'Expiry date is required';
+    else if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(paymentInfo.expiryDate)) newErrors.expiryDate = 'Invalid expiry date (MM/YY)';
+    if (!paymentInfo.cvv.trim()) newErrors.cvv = 'CVV is required';
+    else if (!/^\d{3,4}$/.test(paymentInfo.cvv)) newErrors.cvv = 'Invalid CVV';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleNext = () => {
+    let isValid = true;
+    if (currentStep === 0) isValid = validateShipping();
+    if (currentStep === 1) isValid = validateBilling();
+    if (currentStep === 2) isValid = validatePayment();
+    
+    if (isValid && currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+      setErrors({});
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleSubmitOrder = async () => {
+    if (!termsAccepted) {
+      setErrors({ terms: 'You must accept the terms and conditions' });
+      return;
+    }
+
     setLoading(true);
-
     try {
       const userId = localStorage.getItem('userId');
       const userName = localStorage.getItem('userName');
@@ -40,20 +175,23 @@ export default function Checkout({ cart, total, onClose, onOrderSuccess }) {
       const orderData = {
         userId,
         userName: userName || shippingInfo.fullName,
-        items: cart.map(item => ({
+        items: cartItems.map(item => ({
           productId: item.productId,
-          productName: 'Product', // Would need to fetch product details
+          productName: item.product?.name || 'Product',
           quantity: item.quantity,
-          price: 0 // Would need to fetch product price
+          price: item.product?.price || 0
         })),
         total,
         status: 'Confirmed',
         shippingAddress: `${shippingInfo.address}, ${shippingInfo.city}, ${shippingInfo.state} ${shippingInfo.zipCode}`,
-        paymentMethod: paymentMethod === 'credit-card' ? 'Credit Card' : 'PayPal'
+        billingAddress: `${billingInfo.address}, ${billingInfo.city}, ${billingInfo.state} ${billingInfo.zipCode}`,
+        paymentMethod: paymentInfo.paymentMethod === 'credit-card' ? 'Credit Card' : 'PayPal'
       };
 
-      await shoppingApi.createOrder(orderData);
-      onOrderSuccess();
+      const response = await shoppingApi.createOrder(orderData);
+      setOrderId(response.data.order?.id || response.data.id);
+      setOrderPlaced(true);
+      setCurrentStep(steps.length - 1);
     } catch (error) {
       console.error('Error creating order:', error);
       alert('Error creating order. Please try again.');
@@ -61,6 +199,442 @@ export default function Checkout({ cart, total, onClose, onOrderSuccess }) {
       setLoading(false);
     }
   };
+
+  const StepIndicator = () => (
+    <div className="flex items-center justify-between mb-8">
+      {steps.map((step, index) => (
+        <div key={step} className="flex items-center flex-1">
+          <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
+            index <= currentStep ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
+          } font-semibold`}>
+            {index < currentStep ? <CheckCircle size={20} /> : index + 1}
+          </div>
+          <span className={`ml-2 text-sm font-medium ${
+            index <= currentStep ? 'text-blue-600' : 'text-gray-400'
+          } capitalize hidden sm:block`}>
+            {step}
+          </span>
+          {index < steps.length - 1 && (
+            <div className={`flex-1 h-1 mx-4 ${
+              index < currentStep ? 'bg-blue-600' : 'bg-gray-200'
+            }`} />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
+  const ShippingStep = () => (
+    <div className="space-y-6">
+      <h3 className="text-xl font-semibold text-gray-800 flex items-center sticky top-0 bg-white py-4 z-10">
+        <MapPin size={24} className="mr-2 text-blue-600" />
+        Shipping Information
+      </h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              name="fullName"
+              value={shippingInfo.fullName}
+              onChange={(e) => setShippingInfo({ ...shippingInfo, fullName: e.target.value })}
+              className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.fullName ? 'border-red-500' : 'border-gray-300'}`}
+              required
+            />
+          </div>
+          {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="email"
+              name="email"
+              value={shippingInfo.email}
+              onChange={(e) => setShippingInfo({ ...shippingInfo, email: e.target.value })}
+              className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
+              required
+            />
+          </div>
+          {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+          <div className="relative">
+            <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="tel"
+              name="phone"
+              value={shippingInfo.phone}
+              onChange={(e) => setShippingInfo({ ...shippingInfo, phone: e.target.value })}
+              className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
+              required
+            />
+          </div>
+          {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+        </div>
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+          <input
+            type="text"
+            name="address"
+            value={shippingInfo.address}
+            onChange={(e) => setShippingInfo({ ...shippingInfo, address: e.target.value })}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.address ? 'border-red-500' : 'border-gray-300'}`}
+            required
+          />
+          {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
+          <select
+            value={shippingInfo.state}
+            onChange={(e) => {
+              setShippingInfo({ ...shippingInfo, state: e.target.value });
+              loadDistricts(e.target.value);
+            }}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.state ? 'border-red-500' : 'border-gray-300'}`}
+            required
+          >
+            <option value="">Select State</option>
+            {states.map((state) => (
+              <option key={state.id} value={state.code}>{state.name}</option>
+            ))}
+          </select>
+          {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state}</p>}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">District</label>
+          <select
+            value={shippingInfo.city}
+            onChange={(e) => setShippingInfo({ ...shippingInfo, city: e.target.value })}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.city ? 'border-red-500' : 'border-gray-300'}`}
+            required
+          >
+            <option value="">Select District</option>
+            {districts.map((district) => (
+              <option key={district.id} value={district.name}>{district.name}</option>
+            ))}
+          </select>
+          {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
+        </div>
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">PIN Code</label>
+          <input
+            type="text"
+            name="zipCode"
+            value={shippingInfo.zipCode}
+            onChange={(e) => setShippingInfo({ ...shippingInfo, zipCode: e.target.value })}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.zipCode ? 'border-red-500' : 'border-gray-300'}`}
+            required
+          />
+          {errors.zipCode && <p className="text-red-500 text-sm mt-1">{errors.zipCode}</p>}
+        </div>
+      </div>
+    </div>
+  );
+
+  const BillingStep = () => (
+    <div className="space-y-6">
+      <h3 className="text-xl font-semibold text-gray-800 flex items-center sticky top-0 bg-white py-4 z-10">
+        <CreditCard size={24} className="mr-2 text-blue-600" />
+        Billing Information
+      </h3>
+      <div className="flex items-center mb-4">
+        <input
+          type="checkbox"
+          id="sameAsShipping"
+          checked={billingInfo.sameAsShipping}
+          onChange={(e) => {
+            setBillingInfo({ ...billingInfo, sameAsShipping: e.target.checked });
+            if (e.target.checked) {
+              setBillingInfo({
+                ...billingInfo,
+                fullName: shippingInfo.fullName,
+                address: shippingInfo.address,
+                city: shippingInfo.city,
+                state: shippingInfo.state,
+                zipCode: shippingInfo.zipCode
+              });
+            }
+          }}
+          className="mr-2"
+        />
+        <label htmlFor="sameAsShipping" className="text-sm text-gray-700">Same as shipping address</label>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+          <input
+            type="text"
+            value={billingInfo.fullName}
+            onChange={(e) => setBillingInfo({ ...billingInfo, fullName: e.target.value })}
+            disabled={billingInfo.sameAsShipping}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.billingFullName ? 'border-red-500' : 'border-gray-300'} ${billingInfo.sameAsShipping ? 'bg-gray-100' : ''}`}
+            required
+          />
+          {errors.billingFullName && <p className="text-red-500 text-sm mt-1">{errors.billingFullName}</p>}
+        </div>
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+          <input
+            type="text"
+            value={billingInfo.address}
+            onChange={(e) => setBillingInfo({ ...billingInfo, address: e.target.value })}
+            disabled={billingInfo.sameAsShipping}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.billingAddress ? 'border-red-500' : 'border-gray-300'} ${billingInfo.sameAsShipping ? 'bg-gray-100' : ''}`}
+            required
+          />
+          {errors.billingAddress && <p className="text-red-500 text-sm mt-1">{errors.billingAddress}</p>}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
+          <select
+            value={billingInfo.state}
+            onChange={(e) => {
+              setBillingInfo({ ...billingInfo, state: e.target.value });
+              loadDistricts(e.target.value);
+            }}
+            disabled={billingInfo.sameAsShipping}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.billingState ? 'border-red-500' : 'border-gray-300'} ${billingInfo.sameAsShipping ? 'bg-gray-100' : ''}`}
+            required
+          >
+            <option value="">Select State</option>
+            {states.map((state) => (
+              <option key={state.id} value={state.code}>{state.name}</option>
+            ))}
+          </select>
+          {errors.billingState && <p className="text-red-500 text-sm mt-1">{errors.billingState}</p>}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">District</label>
+          <select
+            value={billingInfo.city}
+            onChange={(e) => setBillingInfo({ ...billingInfo, city: e.target.value })}
+            disabled={billingInfo.sameAsShipping}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.billingCity ? 'border-red-500' : 'border-gray-300'} ${billingInfo.sameAsShipping ? 'bg-gray-100' : ''}`}
+            required
+          >
+            <option value="">Select District</option>
+            {districts.map((district) => (
+              <option key={district.id} value={district.name}>{district.name}</option>
+            ))}
+          </select>
+          {errors.billingCity && <p className="text-red-500 text-sm mt-1">{errors.billingCity}</p>}
+        </div>
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">PIN Code</label>
+          <input
+            type="text"
+            value={billingInfo.zipCode}
+            onChange={(e) => setBillingInfo({ ...billingInfo, zipCode: e.target.value })}
+            disabled={billingInfo.sameAsShipping}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.billingZipCode ? 'border-red-500' : 'border-gray-300'} ${billingInfo.sameAsShipping ? 'bg-gray-100' : ''}`}
+            required
+          />
+          {errors.billingZipCode && <p className="text-red-500 text-sm mt-1">{errors.billingZipCode}</p>}
+        </div>
+      </div>
+    </div>
+  );
+
+  const PaymentStep = () => (
+    <div className="space-y-6">
+      <h3 className="text-xl font-semibold text-gray-800 flex items-center">
+        <PaymentIcon size={24} className="mr-2 text-blue-600" />
+        Payment Information
+      </h3>
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+          <div className="flex space-x-4">
+            <label className="flex items-center">
+              <input
+                type="radio"
+                value="credit-card"
+                checked={paymentInfo.paymentMethod === 'credit-card'}
+                onChange={(e) => setPaymentInfo({ ...paymentInfo, paymentMethod: e.target.value })}
+                className="mr-2"
+              />
+              <span>Credit Card</span>
+            </label>
+            <label className="flex items-center">
+              <input
+                type="radio"
+                value="paypal"
+                checked={paymentInfo.paymentMethod === 'paypal'}
+                onChange={(e) => setPaymentInfo({ ...paymentInfo, paymentMethod: e.target.value })}
+                className="mr-2"
+              />
+              <span>PayPal</span>
+            </label>
+          </div>
+        </div>
+
+        {paymentInfo.paymentMethod === 'credit-card' && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Card Number</label>
+              <input
+                type="text"
+                value={paymentInfo.cardNumber}
+                onChange={(e) => setPaymentInfo({ ...paymentInfo, cardNumber: e.target.value })}
+                placeholder="1234 5678 9012 3456"
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.cardNumber ? 'border-red-500' : 'border-gray-300'}`}
+                required
+              />
+              {errors.cardNumber && <p className="text-red-500 text-sm mt-1">{errors.cardNumber}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Cardholder Name</label>
+              <input
+                type="text"
+                value={paymentInfo.cardName}
+                onChange={(e) => setPaymentInfo({ ...paymentInfo, cardName: e.target.value })}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.cardName ? 'border-red-500' : 'border-gray-300'}`}
+                required
+              />
+              {errors.cardName && <p className="text-red-500 text-sm mt-1">{errors.cardName}</p>}
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Expiry Date</label>
+                <input
+                  type="text"
+                  value={paymentInfo.expiryDate}
+                  onChange={(e) => setPaymentInfo({ ...paymentInfo, expiryDate: e.target.value })}
+                  placeholder="MM/YY"
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.expiryDate ? 'border-red-500' : 'border-gray-300'}`}
+                  required
+                />
+                {errors.expiryDate && <p className="text-red-500 text-sm mt-1">{errors.expiryDate}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">CVV</label>
+                <input
+                  type="text"
+                  value={paymentInfo.cvv}
+                  onChange={(e) => setPaymentInfo({ ...paymentInfo, cvv: e.target.value })}
+                  placeholder="123"
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.cvv ? 'border-red-500' : 'border-gray-300'}`}
+                  required
+                />
+                {errors.cvv && <p className="text-red-500 text-sm mt-1">{errors.cvv}</p>}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const ReviewStep = () => (
+    <div className="space-y-6">
+      <h3 className="text-xl font-semibold text-gray-800 flex items-center">
+        <ShoppingBag size={24} className="mr-2 text-blue-600" />
+        Review Your Order
+      </h3>
+      
+      <div className="bg-gray-50 rounded-lg p-6">
+        <h4 className="font-semibold text-gray-800 mb-4">Shipping Address</h4>
+        <p className="text-gray-600">
+          {shippingInfo.fullName}<br />
+          {shippingInfo.address}<br />
+          {shippingInfo.city}, {shippingInfo.state} {shippingInfo.zipCode}<br />
+          {shippingInfo.email}<br />
+          {shippingInfo.phone}
+        </p>
+      </div>
+
+      <div className="bg-gray-50 rounded-lg p-6">
+        <h4 className="font-semibold text-gray-800 mb-4">Billing Address</h4>
+        <p className="text-gray-600">
+          {billingInfo.fullName}<br />
+          {billingInfo.address}<br />
+          {billingInfo.city}, {billingInfo.state} {billingInfo.zipCode}
+        </p>
+      </div>
+
+      <div className="bg-gray-50 rounded-lg p-6">
+        <h4 className="font-semibold text-gray-800 mb-4">Payment Method</h4>
+        <p className="text-gray-600 capitalize">{paymentInfo.paymentMethod === 'credit-card' ? 'Credit Card' : 'PayPal'}</p>
+      </div>
+
+      <div className="bg-gray-50 rounded-lg p-6">
+        <h4 className="font-semibold text-gray-800 mb-4">Order Items</h4>
+        <div className="space-y-3">
+          {cartItems.map((item) => (
+            <div key={item.id} className="flex justify-between items-center">
+              <div>
+                <p className="font-medium text-gray-800">{item.product?.name}</p>
+                <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+              </div>
+              <p className="font-semibold text-gray-800">${item.totalPrice.toFixed(2)}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-blue-50 rounded-lg p-6">
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <span className="text-gray-600">Subtotal</span>
+            <span className="font-medium">${subtotal.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">Shipping</span>
+            <span className="font-medium">${shipping.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">Tax (8%)</span>
+            <span className="font-medium">${tax.toFixed(2)}</span>
+          </div>
+          <div className="border-t pt-2 mt-2">
+            <div className="flex justify-between text-xl font-bold">
+              <span>Total</span>
+              <span className="text-blue-600">${total.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white border rounded-lg p-4">
+        <label className="flex items-start space-x-3">
+          <input
+            type="checkbox"
+            checked={termsAccepted}
+            onChange={(e) => setTermsAccepted(e.target.checked)}
+            className="mt-1"
+          />
+          <span className="text-sm text-gray-700">
+            I agree to the <a href="#" className="text-blue-600 hover:underline">Terms and Conditions</a> and <a href="#" className="text-blue-600 hover:underline">Privacy Policy</a>
+          </span>
+        </label>
+        {errors.terms && <p className="text-red-500 text-sm mt-2">{errors.terms}</p>}
+      </div>
+    </div>
+  );
+
+  const ConfirmStep = () => (
+    <div className="text-center py-12">
+      <CheckCircle size={80} className="mx-auto text-green-500 mb-6" />
+      <h2 className="text-3xl font-bold text-gray-800 mb-4">Order Confirmed!</h2>
+      <p className="text-gray-600 mb-2">Thank you for your purchase.</p>
+      <p className="text-gray-600 mb-8">Order ID: {orderId}</p>
+      <button
+        onClick={() => {
+          onClose();
+          onOrderSuccess();
+        }}
+        className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+      >
+        Continue Shopping
+      </button>
+    </div>
+  );
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -72,241 +646,46 @@ export default function Checkout({ cart, total, onClose, onOrderSuccess }) {
               ✕
             </button>
           </div>
+          <StepIndicator />
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Shipping Information */}
-            <div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                <MapPin size={24} className="mr-2 text-blue-600" />
-                Shipping Information
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                    <input
-                      type="text"
-                      name="fullName"
-                      value={shippingInfo.fullName}
-                      onChange={handleShippingChange}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                    <input
-                      type="email"
-                      name="email"
-                      value={shippingInfo.email}
-                      onChange={handleShippingChange}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={shippingInfo.phone}
-                      onChange={handleShippingChange}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
-                  <input
-                    type="text"
-                    name="address"
-                    value={shippingInfo.address}
-                    onChange={handleShippingChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
-                    <input
-                      type="text"
-                      name="city"
-                      value={shippingInfo.city}
-                      onChange={handleShippingChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
-                    <input
-                      type="text"
-                      name="state"
-                      value={shippingInfo.state}
-                      onChange={handleShippingChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">ZIP Code</label>
-                  <input
-                    type="text"
-                    name="zipCode"
-                    value={shippingInfo.zipCode}
-                    onChange={handleShippingChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
+        <div className="p-6">
+          {currentStep === 0 && <ShippingStep />}
+          {currentStep === 1 && <BillingStep />}
+          {currentStep === 2 && <PaymentStep />}
+          {currentStep === 3 && <ReviewStep />}
+          {currentStep === 4 && <ConfirmStep />}
+        </div>
 
-            {/* Payment Information */}
-            <div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                <CreditCard size={24} className="mr-2 text-blue-600" />
-                Payment Information
-              </h3>
-
-              <div className="space-y-4 mb-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
-                  <div className="flex space-x-4">
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        value="credit-card"
-                        checked={paymentMethod === 'credit-card'}
-                        onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="mr-2"
-                      />
-                      <span>Credit Card</span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        value="paypal"
-                        checked={paymentMethod === 'paypal'}
-                        onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="mr-2"
-                      />
-                      <span>PayPal</span>
-                    </label>
-                  </div>
-                </div>
-
-                {paymentMethod === 'credit-card' && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Card Number</label>
-                      <input
-                        type="text"
-                        name="cardNumber"
-                        value={billingInfo.cardNumber}
-                        onChange={handleBillingChange}
-                        placeholder="1234 5678 9012 3456"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Cardholder Name</label>
-                      <input
-                        type="text"
-                        name="cardName"
-                        value={billingInfo.cardName}
-                        onChange={handleBillingChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Expiry Date</label>
-                        <input
-                          type="text"
-                          name="expiryDate"
-                          value={billingInfo.expiryDate}
-                          onChange={handleBillingChange}
-                          placeholder="MM/YY"
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">CVV</label>
-                        <input
-                          type="text"
-                          name="cvv"
-                          value={billingInfo.cvv}
-                          onChange={handleBillingChange}
-                          placeholder="123"
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Order Summary */}
-              <div className="bg-gray-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Order Summary</h3>
-                <div className="space-y-2 mb-4">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Items ({cart.length})</span>
-                    <span className="font-medium">${total.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Shipping</span>
-                    <span className="font-medium">Free</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Tax</span>
-                    <span className="font-medium">$0.00</span>
-                  </div>
-                </div>
-                <div className="border-t pt-4">
-                  <div className="flex justify-between">
-                    <span className="text-xl font-bold text-gray-800">Total</span>
-                    <span className="text-2xl font-bold text-blue-600">${total.toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-8 flex space-x-4">
+        {!orderPlaced && (
+          <div className="p-6 border-t flex justify-between">
             <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 border-2 border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+              onClick={handleBack}
+              disabled={currentStep === 0}
+              className="flex items-center gap-2 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Cancel
+              <ArrowLeft size={20} />
+              Back
             </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Processing...' : 'Place Order'}
-            </button>
+            {currentStep === steps.length - 2 ? (
+              <button
+                onClick={handleSubmitOrder}
+                disabled={loading}
+                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Processing...' : 'Place Order'}
+              </button>
+            ) : currentStep < steps.length - 1 ? (
+              <button
+                onClick={handleNext}
+                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              >
+                Next
+                <ArrowRight size={20} />
+              </button>
+            ) : null}
           </div>
-        </form>
+        )}
       </div>
     </div>
   );

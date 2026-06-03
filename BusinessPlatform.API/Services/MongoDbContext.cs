@@ -33,5 +33,7 @@ namespace BusinessPlatform.API.Services
         public IMongoCollection<Movie> Movies => _database.GetCollection<Movie>("Movies");
         public IMongoCollection<MovieShowtime> MovieShowtimes => _database.GetCollection<MovieShowtime>("MovieShowtimes");
         public IMongoCollection<Booking> Bookings => _database.GetCollection<Booking>("Bookings");
+        public IMongoCollection<State> States => _database.GetCollection<State>("States");
+        public IMongoCollection<District> Districts => _database.GetCollection<District>("Districts");
     }
 }

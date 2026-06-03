@@ -201,6 +201,20 @@ namespace BusinessPlatform.API.Controllers
             await _context.ShoppingCartItems.DeleteManyAsync(c => c.UserId == userId);
             return Ok(new { message = "Cart cleared successfully" });
         }
+
+        [HttpGet("states")]
+        public async Task<IActionResult> GetStates()
+        {
+            var states = await _context.States.Find(_ => true).ToListAsync();
+            return Ok(states);
+        }
+
+        [HttpGet("districts/{stateCode}")]
+        public async Task<IActionResult> GetDistricts(string stateCode)
+        {
+            var districts = await _context.Districts.Find(d => d.StateCode == stateCode).ToListAsync();
+            return Ok(districts);
+        }
     }
 
     public class StatusUpdate

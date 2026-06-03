@@ -8,6 +8,8 @@ import Recruitment from './components/Recruitment';
 import Booking from './components/Booking';
 import AdminDashboard from './components/AdminDashboard';
 import Login from './components/Login';
+import Cart from './components/Cart';
+import Checkout from './components/Checkout';
 import { shoppingApi, adminApi } from './services/api';
 
 function App() {
@@ -18,6 +20,8 @@ function App() {
   const [cartItems, setCartItems] = useState([]);
   const [products, setProducts] = useState([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showCartModal, setShowCartModal] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -82,6 +86,16 @@ function App() {
     loadCart();
   };
 
+  const handleProceedToCheckout = () => {
+    setShowCartModal(false);
+    setShowCheckout(true);
+  };
+
+  const handleOrderSuccess = () => {
+    setShowCheckout(false);
+    loadCart();
+  };
+
   const Navigation = () => {
     const navigate = useNavigate();
 
@@ -105,61 +119,17 @@ function App() {
             </div>
 
             <div className="hidden md:flex items-center space-x-4">
-              <div className="relative">
-                <button
-                  onClick={() => setShowCartDropdown(!showCartDropdown)}
-                  className="relative p-2 text-gray-700 hover:text-blue-600 transition-colors"
-                >
-                  <ShoppingCart size={24} />
-                  {cartCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                      {cartCount}
-                    </span>
-                  )}
-                </button>
-
-                {showCartDropdown && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border z-50">
-                    <div className="p-4 border-b">
-                      <h3 className="font-semibold text-gray-800">Shopping Cart</h3>
-                    </div>
-                    <div className="max-h-64 overflow-y-auto">
-                      {cartItems.length === 0 ? (
-                        <p className="p-4 text-gray-500 text-center">Your cart is empty</p>
-                      ) : (
-                        cartItems.map((item) => {
-                          const product = products.find(p => p.id === item.productId);
-                          return (
-                            <div key={item.id} className="p-4 border-b flex justify-between items-center">
-                              <div>
-                                <p className="font-medium text-gray-800">{product?.name || 'Product'}</p>
-                                <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
-                              </div>
-                              <button
-                                onClick={() => handleRemoveFromCart(item.id)}
-                                className="text-red-500 hover:text-red-700"
-                              >
-                                <X size={16} />
-                              </button>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                    {cartItems.length > 0 && (
-                      <div className="p-4 border-t">
-                        <Link
-                          to="/shopping"
-                          onClick={() => setShowCartDropdown(false)}
-                          className="block w-full text-center bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                          View Cart
-                        </Link>
-                      </div>
-                    )}
-                  </div>
+              <button
+                onClick={() => setShowCartModal(true)}
+                className="relative p-2 text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                <ShoppingCart size={24} />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {cartCount}
+                  </span>
                 )}
-              </div>
+              </button>
 
               {isLoggedIn ? (
                 <button
@@ -224,6 +194,26 @@ function App() {
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/login" element={<Login onLogin={handleLogin} />} />
       </Routes>
+
+      {/* Cart Modal */}
+      {showCartModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b sticky top-0 bg-white flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-800">Shopping Cart</h2>
+              <button onClick={() => setShowCartModal(false)} className="text-gray-500 hover:text-gray-700">
+                ✕
+              </button>
+            </div>
+            <Cart onCartChange={refreshCart} onProceedToCheckout={handleProceedToCheckout} />
+          </div>
+        </div>
+      )}
+
+      {/* Checkout Modal */}
+      {showCheckout && (
+        <Checkout onClose={() => setShowCheckout(false)} onOrderSuccess={handleOrderSuccess} />
+      )}
     </Router>
   );
 }
