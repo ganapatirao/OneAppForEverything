@@ -119,7 +119,7 @@ export default function AdminDashboard() {
 
   const loadCategories = async () => {
     try {
-      const response = await shoppingApi.getCategories();
+      const response = await shoppingApi.getCategories(true);
       setCategories(response.data);
     } catch (error) {
       console.error('Error loading categories:', error);

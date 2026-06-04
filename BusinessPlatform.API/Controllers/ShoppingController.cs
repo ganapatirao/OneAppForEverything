@@ -84,10 +84,24 @@ namespace BusinessPlatform.API.Controllers
         }
 
         [HttpGet("categories")]
-        public async Task<IActionResult> GetCategories()
+        public async Task<IActionResult> GetCategories([FromQuery] bool includeAll = false)
         {
             var categories = await _context.Categories.Find(_ => true).ToListAsync();
-            return Ok(categories);
+
+            if (includeAll)
+            {
+                // Return all categories for admin
+                return Ok(categories);
+            }
+
+            var products = await _context.Products.Find(_ => true).ToListAsync();
+
+            // Filter categories that have at least one active product
+            var categoriesWithActiveProducts = categories
+                .Where(c => products.Any(p => p.CategoryName == c.Name && p.Status == "Active"))
+                .ToList();
+
+            return Ok(categoriesWithActiveProducts);
         }
 
         [HttpPost("categories")]

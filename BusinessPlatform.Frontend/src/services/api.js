@@ -25,7 +25,7 @@ export const shoppingApi = {
   updateProduct: (id, data) => api.put(`/shopping/products/${id}`, data),
   updateProductStatus: (id, status) => api.put(`/shopping/products/${id}/status`, { status }),
   deleteProduct: (id) => api.delete(`/shopping/products/${id}`),
-  getCategories: () => api.get('/shopping/categories'),
+  getCategories: (includeAll = false) => api.get('/shopping/categories', { params: { includeAll } }),
   createCategory: (data) => api.post('/shopping/categories', data),
   getOrders: () => api.get('/shopping/orders'),
   getUserOrders: (userId) => api.get(`/shopping/orders/user/${userId}`),

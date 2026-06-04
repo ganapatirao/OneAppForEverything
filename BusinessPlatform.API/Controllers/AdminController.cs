@@ -203,11 +203,26 @@ namespace BusinessPlatform.API.Controllers
         [Authorize]
         public async Task<IActionResult> DeleteProduct(string id)
         {
+            var product = await _context.Products.Find(p => p.Id == id).FirstOrDefaultAsync();
+            if (product == null)
+            {
+                return NotFound(new { message = "Product not found" });
+            }
+
             var result = await _context.Products.DeleteOneAsync(p => p.Id == id);
             if (result.DeletedCount == 0)
             {
                 return NotFound(new { message = "Product not found" });
             }
+
+            // Check if there are any other products in the same category
+            var remainingProducts = await _context.Products.Find(p => p.CategoryName == product.CategoryName).CountDocumentsAsync();
+            if (remainingProducts == 0)
+            {
+                // Delete the category if no products remain
+                await _context.Categories.DeleteOneAsync(c => c.Name == product.CategoryName);
+            }
+
             return Ok(new { message = "Product deleted successfully" });
         }
 
