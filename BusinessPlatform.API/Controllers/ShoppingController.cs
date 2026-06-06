@@ -230,9 +230,4 @@ namespace BusinessPlatform.API.Controllers
             return Ok(districts);
         }
     }
-
-    public class StatusUpdate
-    {
-        public string Status { get; set; } = string.Empty;
-    }
 }

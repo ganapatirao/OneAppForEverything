@@ -27,6 +27,12 @@ export default function AdminDashboard() {
 
   // Filter states
   const [productFilter, setProductFilter] = useState({ name: '', category: '', status: '' });
+  const [adSearchTerm, setAdSearchTerm] = useState('');
+  const [adCategoryFilter, setAdCategoryFilter] = useState('All');
+  const [adStatusFilter, setAdStatusFilter] = useState('All');
+  const [adSortBy, setAdSortBy] = useState('newest');
+  const [adFeaturedOnly, setAdFeaturedOnly] = useState(false);
+  const [adUrgentOnly, setAdUrgentOnly] = useState(false);
 
   useEffect(() => {
     const role = localStorage.getItem('role');
@@ -660,6 +666,88 @@ export default function AdminDashboard() {
                 Add Ad
               </button>
             </div>
+
+            {/* Filter Bar */}
+            <div className="bg-gray-50 rounded-lg p-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Search ads..."
+                    value={adSearchTerm || ''}
+                    onChange={(e) => setAdSearchTerm(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <select
+                    value={adCategoryFilter || 'All'}
+                    onChange={(e) => setAdCategoryFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="All">All Categories</option>
+                    <option value="Jobs">Jobs</option>
+                    <option value="Vehicles">Vehicles</option>
+                    <option value="Real Estate">Real Estate</option>
+                    <option value="Mobiles">Mobiles</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Fashion">Fashion</option>
+                    <option value="Home & Living">Home & Living</option>
+                    <option value="Services">Services</option>
+                    <option value="Pets">Pets</option>
+                    <option value="Matrimonial">Matrimonial</option>
+                    <option value="Community">Community</option>
+                    <option value="Business">Business</option>
+                  </select>
+                </div>
+                <div>
+                  <select
+                    value={adStatusFilter || 'All'}
+                    onChange={(e) => setAdStatusFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="All">All Status</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="Pending">Pending</option>
+                  </select>
+                </div>
+                <div>
+                  <select
+                    value={adSortBy || 'newest'}
+                    onChange={(e) => setAdSortBy(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                    <option value="popular">Most Popular</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-4 mt-3">
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={adFeaturedOnly || false}
+                    onChange={(e) => setAdFeaturedOnly(e.target.checked)}
+                    className="w-4 h-4 text-blue-500 rounded focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Featured Only</span>
+                </label>
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={adUrgentOnly || false}
+                    onChange={(e) => setAdUrgentOnly(e.target.checked)}
+                    className="w-4 h-4 text-blue-500 rounded focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Urgent Only</span>
+                </label>
+              </div>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead>
@@ -670,24 +758,45 @@ export default function AdminDashboard() {
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Price</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Location</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Views</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {ads.map((ad) => (
+                  {ads
+                    .filter(ad => {
+                      const matchSearch = !adSearchTerm || ad.title?.toLowerCase().includes(adSearchTerm.toLowerCase()) || ad.description?.toLowerCase().includes(adSearchTerm.toLowerCase());
+                      const matchCategory = adCategoryFilter === 'All' || ad.categoryName === adCategoryFilter;
+                      const matchStatus = adStatusFilter === 'All' || ad.status === adStatusFilter;
+                      const matchFeatured = !adFeaturedOnly || ad.isFeatured;
+                      const matchUrgent = !adUrgentOnly || ad.isUrgent;
+                      return matchSearch && matchCategory && matchStatus && matchFeatured && matchUrgent;
+                    })
+                    .sort((a, b) => {
+                      if (adSortBy === 'newest') return new Date(b.createdAt) - new Date(a.createdAt);
+                      if (adSortBy === 'oldest') return new Date(a.createdAt) - new Date(b.createdAt);
+                      if (adSortBy === 'price-low') return a.price - b.price;
+                      if (adSortBy === 'price-high') return b.price - a.price;
+                      if (adSortBy === 'popular') return (b.views || 0) - (a.views || 0);
+                      return 0;
+                    })
+                    .map((ad) => (
                     <tr key={ad.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm text-gray-800">{ad.title}</td>
+                      <td className="px-4 py-3 text-sm text-gray-800 max-w-xs truncate">{ad.title}</td>
                       <td className="px-4 py-3 text-sm text-gray-800">{ad.categoryName}</td>
                       <td className="px-4 py-3 text-sm text-gray-800">{ad.sellerName}</td>
-                      <td className="px-4 py-3 text-sm text-gray-800">${ad.price.toFixed(2)}</td>
+                      <td className="px-4 py-3 text-sm text-gray-800">₹{ad.price.toLocaleString('en-IN')}</td>
                       <td className="px-4 py-3 text-sm text-gray-800">{ad.location}</td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          ad.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          ad.status === 'Active' ? 'bg-green-100 text-green-800' : 
+                          ad.status === 'Inactive' ? 'bg-red-100 text-red-800' :
+                          'bg-yellow-100 text-yellow-800'
                         }`}>
                           {ad.status}
                         </span>
                       </td>
+                      <td className="px-4 py-3 text-sm text-gray-800">{ad.views || 0}</td>
                       <td className="px-4 py-3 flex gap-2">
                         <button
                           onClick={() => handleEditAd(ad)}

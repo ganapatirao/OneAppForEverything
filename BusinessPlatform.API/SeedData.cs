@@ -560,16 +560,229 @@ namespace BusinessPlatform.API
 
             {
 
-                new Advertisement { Title = "iPhone 14 Pro - Excellent Condition", Description = "Like new iPhone 14 Pro, 256GB, comes with original box and accessories.", Price = 799.99m, CategoryName = "Electronics", Location = "New York, NY", Condition = "Like New", SellerId = user1.Id, SellerName = user1.FullName, ImageUrl = "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=600&h=400&fit=crop" },
+                new Advertisement {
+                    Title = "iPhone 14 Pro - Excellent Condition",
+                    Description = "Like new iPhone 14 Pro, 256GB, comes with original box and accessories. No scratches, battery health 98%.",
+                    Price = 799.99m,
+                    CategoryName = "Electronics",
+                    Subcategory = "Mobiles",
+                    Location = "New York, NY",
+                    City = "New York",
+                    Condition = "Like New",
+                    SellerId = user1.Id,
+                    SellerName = user1.FullName,
+                    SellerPhone = "+1-555-0101",
+                    PhoneDisplayStatus = "Visible",
+                    SellerEmail = "john@example.com",
+                    ImageUrl = "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=600&h=400&fit=crop",
+                    ImageUrls = new List<string> {
+                        "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=600&h=400&fit=crop",
+                        "https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=600&h=400&fit=crop",
+                        "https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=600&h=400&fit=crop",
+                        "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=600&h=400&fit=crop"
+                    },
+                    Negotiable = true,
+                    IsFeatured = true,
+                    IsUrgent = false,
+                    Views = 245,
+                    PostedDate = DateTime.UtcNow.AddDays(-5)
+                },
 
-                new Advertisement { Title = "2019 Toyota Camry - Low Mileage", Description = "Well-maintained 2019 Toyota Camry with only 35,000 miles. Clean title.", Price = 18500.00m, CategoryName = "Vehicles", Location = "Los Angeles, CA", Condition = "Good", SellerId = user2.Id, SellerName = user2.FullName, ImageUrl = "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=600&h=400&fit=crop" },
+                new Advertisement {
+                    Title = "2019 Toyota Camry - Low Mileage",
+                    Description = "Well-maintained 2019 Toyota Camry with only 35,000 miles. Clean title, single owner, full service history.",
+                    Price = 18500.00m,
+                    CategoryName = "Vehicles",
+                    Subcategory = "Cars",
+                    Location = "Los Angeles, CA",
+                    City = "Los Angeles",
+                    Condition = "Good",
+                    SellerId = user2.Id,
+                    SellerName = user2.FullName,
+                    SellerPhone = "+1-555-0102",
+                    PhoneDisplayStatus = "Hidden",
+                    SellerEmail = "jane@example.com",
+                    ImageUrl = "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=600&h=400&fit=crop",
+                    ImageUrls = new List<string> {
+                        "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=600&h=400&fit=crop",
+                        "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=600&h=400&fit=crop",
+                        "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=600&h=400&fit=crop",
+                        "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=600&h=400&fit=crop"
+                    },
+                    Negotiable = true,
+                    IsFeatured = false,
+                    IsUrgent = true,
+                    Views = 512,
+                    PostedDate = DateTime.UtcNow.AddDays(-10)
+                },
 
-                new Advertisement { Title = "Modern Sofa Set - Brand New", Description = "Beautiful 3-piece sofa set, gray fabric, never used.", Price = 599.99m, CategoryName = "Furniture", Location = "Chicago, IL", Condition = "New", SellerId = user3.Id, SellerName = user3.FullName, ImageUrl = "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&h=400&fit=crop" },
+                new Advertisement {
+                    Title = "Modern Sofa Set - Brand New",
+                    Description = "Beautiful 3-piece sofa set, gray fabric, never used. Includes 3-seater, 2-seater, and armchair.",
+                    Price = 599.99m,
+                    CategoryName = "Furniture",
+                    Subcategory = "Sofas",
+                    Location = "Chicago, IL",
+                    City = "Chicago",
+                    Condition = "New",
+                    SellerId = user3.Id,
+                    SellerName = user3.FullName,
+                    SellerPhone = "+1-555-0103",
+                    PhoneDisplayStatus = "Visible",
+                    SellerEmail = "bob@example.com",
+                    ImageUrl = "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&h=400&fit=crop",
+                    ImageUrls = new List<string> {
+                        "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&h=400&fit=crop",
+                        "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=600&h=400&fit=crop",
+                        "https://images.unsplash.com/photo-1550226891-ef816aed4a98?w=600&h=400&fit=crop",
+                        "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&h=400&fit=crop"
+                    },
+                    Negotiable = false,
+                    IsFeatured = false,
+                    IsUrgent = false,
+                    Views = 128,
+                    PostedDate = DateTime.UtcNow.AddDays(-3)
+                },
 
-                new Advertisement { Title = "2BR Apartment for Rent", Description = "Spacious 2-bedroom apartment in downtown area, close to amenities.", Price = 1500.00m, CategoryName = "Real Estate", Location = "Houston, TX", Condition = "Good", SellerId = user4.Id, SellerName = user4.FullName, ImageUrl = "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&h=400&fit=crop" },
+                new Advertisement {
+                    Title = "2BR Apartment for Rent",
+                    Description = "Spacious 2-bedroom apartment in downtown area, close to amenities. 1200 sq ft, modern kitchen, parking included.",
+                    Price = 1500.00m,
+                    CategoryName = "Real Estate",
+                    Subcategory = "Apartments",
+                    Location = "Houston, TX",
+                    City = "Houston",
+                    Condition = "Good",
+                    SellerId = user4.Id,
+                    SellerName = user4.FullName,
+                    SellerPhone = "+1-555-0104",
+                    PhoneDisplayStatus = "Hidden",
+                    SellerEmail = "alice@example.com",
+                    ImageUrl = "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&h=400&fit=crop",
+                    ImageUrls = new List<string> {
+                        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&h=400&fit=crop",
+                        "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop",
+                        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop",
+                        "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=600&h=400&fit=crop"
+                    },
+                    Negotiable = true,
+                    IsFeatured = true,
+                    IsUrgent = false,
+                    Views = 342,
+                    PostedDate = DateTime.UtcNow.AddDays(-7)
+                },
 
-                new Advertisement { Title = "MacBook Pro 2021 - Refurbished", Description = "MacBook Pro 14-inch M1 Pro, 16GB RAM, 512GB SSD, excellent condition.", Price = 1499.99m, CategoryName = "Electronics", Location = "Seattle, WA", Condition = "Good", SellerId = user1.Id, SellerName = user1.FullName, ImageUrl = "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&h=400&fit=crop" }
+                new Advertisement {
+                    Title = "MacBook Pro 2021 - Refurbished",
+                    Description = "MacBook Pro 14-inch M1 Pro, 16GB RAM, 512GB SSD, excellent condition. Includes charger and original box.",
+                    Price = 1499.99m,
+                    CategoryName = "Electronics",
+                    Subcategory = "Laptops",
+                    Location = "Seattle, WA",
+                    City = "Seattle",
+                    Condition = "Good",
+                    SellerId = user1.Id,
+                    SellerName = user1.FullName,
+                    SellerPhone = "+1-555-0101",
+                    PhoneDisplayStatus = "Visible",
+                    SellerEmail = "john@example.com",
+                    ImageUrl = "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&h=400&fit=crop",
+                    ImageUrls = new List<string> {
+                        "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&h=400&fit=crop",
+                        "https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=600&h=400&fit=crop",
+                        "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&h=400&fit=crop",
+                        "https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=600&h=400&fit=crop"
+                    },
+                    Negotiable = true,
+                    IsFeatured = false,
+                    IsUrgent = true,
+                    Views = 189,
+                    PostedDate = DateTime.UtcNow.AddDays(-2)
+                },
 
+                new Advertisement {
+                    Title = "Royal Enfield Classic 350 - 2022",
+                    Description = "Well-maintained Royal Enfield Classic 350, 2022 model, 8000 km. Single owner, all papers clear.",
+                    Price = 145000.00m,
+                    CategoryName = "Vehicles",
+                    Subcategory = "Bikes",
+                    Location = "Mumbai, MH",
+                    City = "Mumbai",
+                    Condition = "Excellent",
+                    SellerId = user2.Id,
+                    SellerName = user2.FullName,
+                    SellerPhone = "+1-555-0102",
+                    PhoneDisplayStatus = "Hidden",
+                    SellerEmail = "jane@example.com",
+                    ImageUrl = "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600&h=400&fit=crop",
+                    ImageUrls = new List<string> {
+                        "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600&h=400&fit=crop",
+                        "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=600&h=400&fit=crop",
+                        "https://images.unsplash.com/photo-1558981852-426c6c22a060?w=600&h=400&fit=crop",
+                        "https://images.unsplash.com/photo-1609630875171-b1321377ee65?w=600&h=400&fit=crop"
+                    },
+                    Negotiable = true,
+                    IsFeatured = true,
+                    IsUrgent = false,
+                    Views = 678,
+                    PostedDate = DateTime.UtcNow.AddDays(-12)
+                },
+
+                new Advertisement {
+                    Title = "Dining Table Set - 6 Seater",
+                    Description = "Solid wood dining table with 6 chairs. Teak finish, excellent condition. Moving sale.",
+                    Price = 25000.00m,
+                    CategoryName = "Furniture",
+                    Subcategory = "Dining",
+                    Location = "Bangalore, KA",
+                    City = "Bangalore",
+                    Condition = "Good",
+                    SellerId = user3.Id,
+                    SellerName = user3.FullName,
+                    SellerPhone = "+1-555-0103",
+                    PhoneDisplayStatus = "Visible",
+                    SellerEmail = "bob@example.com",
+                    ImageUrl = "https://images.unsplash.com/photo-1617806118233-18e1de247200?w=600&h=400&fit=crop",
+                    ImageUrls = new List<string> {
+                        "https://images.unsplash.com/photo-1617806118233-18e1de247200?w=600&h=400&fit=crop",
+                        "https://images.unsplash.com/photo-1618220179428-22790b461013?w=600&h=400&fit=crop",
+                        "https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=600&h=400&fit=crop",
+                        "https://images.unsplash.com/photo-1615529182904-14819c35db37?w=600&h=400&fit=crop"
+                    },
+                    Negotiable = true,
+                    IsFeatured = false,
+                    IsUrgent = true,
+                    Views = 234,
+                    PostedDate = DateTime.UtcNow.AddDays(-4)
+                },
+
+                new Advertisement {
+                    Title = "Samsung Galaxy S23 Ultra",
+                    Description = "Brand new Samsung Galaxy S23 Ultra, 512GB, 12GB RAM. Sealed pack with warranty.",
+                    Price = 124999.00m,
+                    CategoryName = "Electronics",
+                    Subcategory = "Mobiles",
+                    Location = "Delhi, DL",
+                    City = "Delhi",
+                    Condition = "New",
+                    SellerId = user4.Id,
+                    SellerName = user4.FullName,
+                    SellerPhone = "+1-555-0104",
+                    PhoneDisplayStatus = "Hidden",
+                    SellerEmail = "alice@example.com",
+                    ImageUrl = "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=600&h=400&fit=crop",
+                    ImageUrls = new List<string> {
+                        "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=600&h=400&fit=crop",
+                        "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=600&h=400&fit=crop",
+                        "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=600&h=400&fit=crop",
+                        "https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=600&h=400&fit=crop"
+                    },
+                    Negotiable = false,
+                    IsFeatured = true,
+                    IsUrgent = true,
+                    Views = 891,
+                    PostedDate = DateTime.UtcNow.AddDays(-1)
+                }
             };
 
             await _context.Advertisements.InsertManyAsync(ads);

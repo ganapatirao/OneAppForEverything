@@ -25,6 +25,7 @@ namespace BusinessPlatform.API.Services
         public IMongoCollection<AdCategory> AdCategories => _database.GetCollection<AdCategory>("AdCategories");
         public IMongoCollection<Advertisement> Advertisements => _database.GetCollection<Advertisement>("Advertisements");
         public IMongoCollection<AdResponse> AdResponses => _database.GetCollection<AdResponse>("AdResponses");
+        public IMongoCollection<Agent> Agents => _database.GetCollection<Agent>("Agents");
         public IMongoCollection<Job> Jobs => _database.GetCollection<Job>("Jobs");
         public IMongoCollection<JobApplication> JobApplications => _database.GetCollection<JobApplication>("JobApplications");
         public IMongoCollection<Candidate> Candidates => _database.GetCollection<Candidate>("Candidates");

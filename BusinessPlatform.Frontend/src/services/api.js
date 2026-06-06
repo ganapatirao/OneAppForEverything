@@ -52,6 +52,7 @@ export const advertisingApi = {
   getAdCategories: () => api.get('/advertising/categories'),
   createAdCategory: (data) => api.post('/advertising/categories', data),
   getAdResponses: (adId) => api.get(`/advertising/responses/${adId}`),
+  getUserResponses: (userId) => api.get(`/advertising/responses/user/${userId}`),
   createAdResponse: (data) => api.post('/advertising/responses', data),
 };
 

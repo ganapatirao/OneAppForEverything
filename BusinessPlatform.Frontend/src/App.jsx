@@ -7,6 +7,7 @@ import Advertising from './components/Advertising';
 import Recruitment from './components/Recruitment';
 import Booking from './components/Booking';
 import AdminDashboard from './components/AdminDashboard';
+import AgentDashboard from './components/AgentDashboard';
 import Login from './components/Login';
 import Register from './components/Register';
 import PasswordReset from './components/PasswordReset';
@@ -194,6 +195,7 @@ function App() {
         <Route path="/recruitment" element={<Recruitment />} />
         <Route path="/booking" element={<Booking />} />
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/agent" element={<AgentDashboard />} />
         <Route path="/login" element={<Login onLogin={handleLogin} />} />
         <Route path="/register" element={<Register />} />
         <Route path="/reset-password" element={<PasswordReset />} />

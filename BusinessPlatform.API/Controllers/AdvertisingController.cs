@@ -115,12 +115,101 @@ namespace BusinessPlatform.API.Controllers
         }
 
         [HttpPost("responses")]
+        [Authorize]
         public async Task<IActionResult> CreateResponse([FromBody] AdResponse response)
         {
             response.Id = null;
             response.CreatedAt = DateTime.UtcNow;
             await _context.AdResponses.InsertOneAsync(response);
-            return Ok(new { message = "Response created successfully", response });
+            return Ok(new { message = "Message sent successfully", response });
         }
+
+        [HttpGet("responses/user/{userId}")]
+        public async Task<IActionResult> GetUserResponses(string userId)
+        {
+            var responses = await _context.AdResponses.Find(r => r.ResponderId == userId).ToListAsync();
+            return Ok(responses);
+        }
+
+        [HttpGet("agents")]
+        public async Task<IActionResult> GetAgents()
+        {
+            var agents = await _context.Agents.Find(_ => true).ToListAsync();
+            return Ok(agents);
+        }
+
+        [HttpGet("agents/{id}")]
+        public async Task<IActionResult> GetAgent(string id)
+        {
+            var agent = await _context.Agents.Find(a => a.Id == id).FirstOrDefaultAsync();
+            if (agent == null)
+            {
+                return NotFound(new { message = "Agent not found" });
+            }
+            return Ok(agent);
+        }
+
+        [HttpGet("agents/user/{userId}")]
+        public async Task<IActionResult> GetAgentByUserId(string userId)
+        {
+            var agent = await _context.Agents.Find(a => a.UserId == userId).FirstOrDefaultAsync();
+            if (agent == null)
+            {
+                return NotFound(new { message = "Agent not found" });
+            }
+            return Ok(agent);
+        }
+
+        [HttpPost("agents")]
+        [Authorize]
+        public async Task<IActionResult> CreateAgent([FromBody] Agent agent)
+        {
+            agent.Id = null;
+            agent.CreatedAt = DateTime.UtcNow;
+            await _context.Agents.InsertOneAsync(agent);
+            return Ok(new { message = "Agent created successfully", agent });
+        }
+
+        [HttpPut("agents/{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateAgent(string id, [FromBody] Agent agent)
+        {
+            agent.Id = id;
+            var result = await _context.Agents.ReplaceOneAsync(a => a.Id == id, agent);
+            if (result.MatchedCount == 0)
+            {
+                return NotFound(new { message = "Agent not found" });
+            }
+            return Ok(new { message = "Agent updated successfully" });
+        }
+
+        [HttpDelete("agents/{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteAgent(string id)
+        {
+            var result = await _context.Agents.DeleteOneAsync(a => a.Id == id);
+            if (result.DeletedCount == 0)
+            {
+                return NotFound(new { message = "Agent not found" });
+            }
+            return Ok(new { message = "Agent deleted successfully" });
+        }
+
+        [HttpPut("ads/{id}/views")]
+        public async Task<IActionResult> IncrementAdViews(string id)
+        {
+            var updateDef = Builders<Advertisement>.Update.Inc(a => a.Views, 1);
+            var result = await _context.Advertisements.UpdateOneAsync(a => a.Id == id, updateDef);
+            if (result.MatchedCount == 0)
+            {
+                return NotFound(new { message = "Advertisement not found" });
+            }
+            return Ok(new { message = "Views incremented successfully" });
+        }
+    }
+
+    public class StatusUpdate
+    {
+        public string Status { get; set; } = string.Empty;
     }
 }
