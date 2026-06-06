@@ -288,6 +288,18 @@ namespace BusinessPlatform.API.Models
 
 
 
+        [BsonElement("userEmail")]
+
+        public string UserEmail { get; set; } = string.Empty;
+
+
+
+        [BsonElement("userPhone")]
+
+        public string UserPhone { get; set; } = string.Empty;
+
+
+
         [BsonElement("items")]
 
         public List<OrderItem> Items { get; set; } = new List<OrderItem>();

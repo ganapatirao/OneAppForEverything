@@ -819,10 +819,17 @@ export default function Checkout({ onClose, onOrderSuccess }) {
     try {
       const userId = localStorage.getItem('userId');
       const userName = localStorage.getItem('userName');
+      const userEmail = localStorage.getItem('userEmail');
+      const userPhone = localStorage.getItem('userPhone');
+
+      // Use shipping address for billing if sameAsShipping is true
+      const finalBillingInfo = billingInfo.sameAsShipping ? shippingInfo : billingInfo;
 
       const orderData = {
         userId,
         userName: userName || shippingInfo.fullName,
+        userEmail: userEmail || shippingInfo.email,
+        userPhone: userPhone || shippingInfo.phone,
         items: cartItems.map(item => ({
           productId: item.productId,
           productName: item.product?.name || 'Product',
@@ -832,7 +839,7 @@ export default function Checkout({ onClose, onOrderSuccess }) {
         total,
         status: 'Confirmed',
         shippingAddress: `${shippingInfo.address}, ${shippingInfo.city}, ${shippingInfo.state} ${shippingInfo.zipCode}`,
-        billingAddress: `${billingInfo.address}, ${billingInfo.city}, ${billingInfo.state} ${billingInfo.zipCode}`,
+        billingAddress: `${finalBillingInfo.address}, ${finalBillingInfo.city}, ${finalBillingInfo.state} ${finalBillingInfo.zipCode}`,
         paymentMethod: paymentInfo.paymentMethod === 'credit-card' ? 'Credit Card' : 'PayPal'
       };
 

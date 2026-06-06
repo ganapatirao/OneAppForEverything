@@ -34,6 +34,29 @@ export default function AdminDashboard() {
   const [adFeaturedOnly, setAdFeaturedOnly] = useState(false);
   const [adUrgentOnly, setAdUrgentOnly] = useState(false);
 
+  // Ad form state
+  const [adFormData, setAdFormData] = useState({
+    title: '',
+    description: '',
+    price: '',
+    categoryName: '',
+    subcategory: '',
+    customCategory: '',
+    location: '',
+    city: '',
+    condition: '',
+    phone: '',
+    email: '',
+    imageUrl: '',
+    imageUrls: '',
+    negotiable: false,
+    isFeatured: false,
+    isUrgent: false,
+    status: 'Active'
+  });
+
+  const [adCategories, setAdCategories] = useState([]);
+
   useEffect(() => {
     const role = localStorage.getItem('role');
     const token = localStorage.getItem('token');
@@ -51,6 +74,7 @@ export default function AdminDashboard() {
     loadPackages();
     loadMovies();
     loadCategories();
+    loadAdCategories();
   }, [navigate]);
 
   const loadDashboard = async () => {
@@ -147,6 +171,17 @@ export default function AdminDashboard() {
     }
   };
 
+  const loadAdCategories = async () => {
+    try {
+      const response = await adminApi.getAdCategories();
+      if (response.data && response.data.length > 0) {
+        setAdCategories(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading ad categories:', error);
+    }
+  };
+
   const handleDeleteUser = async (userId) => {
     if (confirm('Are you sure you want to delete this user?')) {
       try {
@@ -161,7 +196,7 @@ export default function AdminDashboard() {
 
   const handleUpdateOrderStatus = async (orderId, status) => {
     try {
-      await shoppingApi.updateOrderStatus(orderId, { status });
+      await adminApi.updateOrderStatus(orderId, status);
       loadAllOrders();
       alert('Order status updated!');
     } catch (error) {
@@ -251,11 +286,146 @@ export default function AdminDashboard() {
   };
 
   const handleEditAd = (ad) => {
+    setAdFormData({
+      title: ad.title || '',
+      description: ad.description || '',
+      price: ad.price || '',
+      categoryName: ad.categoryName || '',
+      subcategory: ad.subcategory || '',
+      customCategory: '',
+      location: ad.location || '',
+      city: ad.city || '',
+      condition: ad.condition || '',
+      phone: ad.sellerPhone || ad.phone || '',
+      email: ad.sellerEmail || ad.email || '',
+      imageUrl: ad.imageUrl || (ad.imageUrls && ad.imageUrls.length > 0 ? ad.imageUrls[0] : ''),
+      imageUrls: ad.imageUrls && ad.imageUrls.length > 1 ? ad.imageUrls.slice(1).join(', ') : '',
+      negotiable: ad.negotiable || false,
+      isFeatured: ad.isFeatured || false,
+      isUrgent: ad.isUrgent || false,
+      status: ad.status || 'Active'
+    });
     setEditModal({ isOpen: true, type: 'ad', data: ad });
   };
 
-  const handleSaveAd = async (adData) => {
+  const handleSaveAd = async (e) => {
+    e.preventDefault();
+
+    // Validation
+    if (!adFormData.title.trim()) {
+      alert('Please enter a title');
+      return;
+    }
+    if (adFormData.title.length > 100) {
+      alert('Title must be less than 100 characters');
+      return;
+    }
+    if (!adFormData.description.trim()) {
+      alert('Please enter a description');
+      return;
+    }
+    if (adFormData.description.length > 2000) {
+      alert('Description must be less than 2000 characters');
+      return;
+    }
+    if (!adFormData.price || parseFloat(adFormData.price) <= 0) {
+      alert('Please enter a valid price');
+      return;
+    }
+    if (!adFormData.categoryName) {
+      alert('Please select a category');
+      return;
+    }
+    if (adFormData.categoryName === 'Other' && !adFormData.customCategory.trim()) {
+      alert('Please enter a custom category name');
+      return;
+    }
+    if (adFormData.customCategory && adFormData.customCategory.length > 50) {
+      alert('Custom category name must be less than 50 characters');
+      return;
+    }
+    if (!adFormData.location.trim()) {
+      alert('Please enter a location');
+      return;
+    }
+    if (adFormData.location.length > 100) {
+      alert('Location must be less than 100 characters');
+      return;
+    }
+    if (!adFormData.city) {
+      alert('Please select a city');
+      return;
+    }
+    if (!adFormData.condition) {
+      alert('Please select a condition');
+      return;
+    }
+    if (!adFormData.phone.trim()) {
+      alert('Please enter a phone number');
+      return;
+    }
+    if (!/^\+?[\d\s-]{10,}$/.test(adFormData.phone)) {
+      alert('Please enter a valid phone number (min 10 digits)');
+      return;
+    }
+    if (!adFormData.email.trim()) {
+      alert('Please enter an email');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adFormData.email)) {
+      alert('Please enter a valid email address');
+      return;
+    }
+    if (!adFormData.imageUrl.trim() && !adFormData.imageUrls.trim()) {
+      alert('Please enter at least one image URL');
+      return;
+    }
+    if (adFormData.imageUrl && !/^https?:\/\/.+/.test(adFormData.imageUrl)) {
+      alert('Please enter a valid image URL (must start with http:// or https://)');
+      return;
+    }
+    if (adFormData.imageUrls && adFormData.imageUrls.length > 1000) {
+      alert('Additional image URLs must be less than 1000 characters');
+      return;
+    }
+    if (adFormData.imageUrls) {
+      const urls = adFormData.imageUrls.split(',').map(url => url.trim()).filter(url => url);
+      for (const url of urls) {
+        if (!/^https?:\/\/.+/.test(url)) {
+          alert('Please enter valid image URLs (must start with http:// or https://)');
+          return;
+        }
+      }
+    }
+
     try {
+      // If it's a new category, create it first
+      if (adFormData.categoryName === 'Other' && adFormData.customCategory.trim()) {
+        await adminApi.createAdCategory({
+          name: adFormData.customCategory,
+          emoji: '📁',
+          subcategories: []
+        });
+        // Reload categories to get the new one
+        await loadAdCategories();
+      }
+
+      const adData = {
+        ...adFormData,
+        price: parseFloat(adFormData.price),
+        categoryName: adFormData.categoryName === 'Other' ? adFormData.customCategory : adFormData.categoryName,
+        imageUrls: adFormData.imageUrls
+          ? [adFormData.imageUrl, ...adFormData.imageUrls.split(',').map(url => url.trim())].filter(url => url)
+          : [adFormData.imageUrl],
+        sellerId: editModal.data?.sellerId || 'admin',
+        sellerName: editModal.data?.sellerName || 'Admin',
+        sellerEmail: adFormData.email,
+        sellerPhone: adFormData.phone,
+        phoneDisplayStatus: 'Visible',
+        views: editModal.data?.views || 0,
+        postedDate: editModal.data?.postedDate || new Date().toISOString()
+      };
+
       if (editModal.data?.id) {
         await adminApi.updateAd(editModal.data.id, adData);
         alert('Ad updated successfully!');
@@ -264,9 +434,29 @@ export default function AdminDashboard() {
         alert('Ad created successfully!');
       }
       setEditModal({ isOpen: false, type: null, data: null });
+      setAdFormData({
+        title: '',
+        description: '',
+        price: '',
+        categoryName: '',
+        subcategory: '',
+        customCategory: '',
+        location: '',
+        city: '',
+        condition: '',
+        phone: '',
+        email: '',
+        imageUrl: '',
+        imageUrls: '',
+        negotiable: false,
+        isFeatured: false,
+        isUrgent: false,
+        status: 'Active'
+      });
       loadAds();
     } catch (error) {
       console.error('Error saving ad:', error);
+      alert('Error saving ad. Please try again.');
     }
   };
 
@@ -659,7 +849,28 @@ export default function AdminDashboard() {
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-gray-800">Advertisements ({ads.length})</h2>
               <button
-                onClick={() => setEditModal({ isOpen: true, type: 'ad', data: null })}
+                onClick={() => {
+                  setAdFormData({
+                    title: '',
+                    description: '',
+                    price: '',
+                    categoryName: '',
+                    subcategory: '',
+                    customCategory: '',
+                    location: '',
+                    city: '',
+                    condition: '',
+                    phone: '',
+                    email: '',
+                    imageUrl: '',
+                    imageUrls: '',
+                    negotiable: false,
+                    isFeatured: false,
+                    isUrgent: false,
+                    status: 'Active'
+                  });
+                  setEditModal({ isOpen: true, type: 'ad', data: null });
+                }}
                 className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
               >
                 <Plus size={16} />
@@ -1110,7 +1321,8 @@ export default function AdminDashboard() {
                   <tr className="bg-gray-50">
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Order ID</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">User Name</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">User ID</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Email</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Phone</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Total</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Date</th>
@@ -1122,7 +1334,8 @@ export default function AdminDashboard() {
                     <tr key={order.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 text-sm text-gray-800">{order.id.substring(0, 8)}...</td>
                       <td className="px-4 py-3 text-sm text-gray-800">{order.userName}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{order.userId?.substring(0, 8)}...</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{order.userEmail || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{order.userPhone || '-'}</td>
                       <td className="px-4 py-3 text-sm text-gray-800">${order.total.toFixed(2)}</td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -1149,7 +1362,7 @@ export default function AdminDashboard() {
                         <button
                           onClick={() => {
                             if (confirm('Are you sure you want to delete this order?')) {
-                              shoppingApi.deleteOrder(order.id).then(() => {
+                              adminApi.deleteOrder(order.id).then(() => {
                                 loadAllOrders();
                                 alert('Order deleted successfully!');
                               }).catch(err => console.error('Error deleting order:', err));
@@ -1440,51 +1653,262 @@ export default function AdminDashboard() {
               )}
 
               {editModal.type === 'ad' && (
-                <form onSubmit={(e) => { e.preventDefault(); handleSaveAd({ title: e.target.title.value, description: e.target.description.value, price: parseFloat(e.target.price.value), location: e.target.location.value, condition: e.target.condition.value, sellerName: e.target.sellerName.value, imageUrl: e.target.imageUrl.value, status: e.target.status.value, categoryName: e.target.categoryName.value }); }}>
-                  <div className="space-y-4">
+                <form onSubmit={handleSaveAd} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Ad Title *</label>
+                    <input
+                      type="text"
+                      value={adFormData.title}
+                      onChange={(e) => setAdFormData({ ...adFormData, title: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      placeholder="What are you selling? (max 100 chars)"
+                      required
+                      maxLength="100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+                    <textarea
+                      value={adFormData.description}
+                      onChange={(e) => setAdFormData({ ...adFormData, description: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+                      rows="4"
+                      placeholder="Describe your item in detail..."
+                      required
+                      maxLength="2000"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                      <input name="title" defaultValue={editModal.data?.title} className="w-full px-3 py-2 border border-gray-300 rounded-lg" required />
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Price (₹) *</label>
+                      <input
+                        type="number"
+                        step="1"
+                        value={adFormData.price}
+                        onChange={(e) => setAdFormData({ ...adFormData, price: e.target.value })}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        placeholder="Enter price"
+                        required
+                        min="0"
+                      />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                      <textarea name="description" defaultValue={editModal.data?.description} className="w-full px-3 py-2 border border-gray-300 rounded-lg" rows="3" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
-                        <input name="price" type="number" step="0.01" defaultValue={editModal.data?.price} className="w-full px-3 py-2 border border-gray-300 rounded-lg" required />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                        <input name="location" defaultValue={editModal.data?.location} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Condition</label>
-                      <input name="condition" defaultValue={editModal.data?.condition} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Seller Name</label>
-                      <input name="sellerName" defaultValue={editModal.data?.sellerName} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
-                      <input name="imageUrl" defaultValue={editModal.data?.imageUrl} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Category Name</label>
-                      <input name="categoryName" defaultValue={editModal.data?.categoryName} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                      <select name="status" defaultValue={editModal.data?.status || 'Active'} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+                      <select
+                        value={adFormData.categoryName}
+                        onChange={(e) => setAdFormData({ ...adFormData, categoryName: e.target.value, subcategory: '', customCategory: '' })}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                        required
+                      >
+                        <option value="">Select Category</option>
+                        {adCategories.map((category) => (
+                          <option key={category.id} value={category.name}>{category.emoji} {category.name}</option>
+                        ))}
+                        <option value="Other">📦 Other</option>
                       </select>
                     </div>
-                    <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
-                      Save
+                  </div>
+                  {adFormData.categoryName === 'Other' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Custom Category Name *</label>
+                      <input
+                        type="text"
+                        value={adFormData.customCategory}
+                        onChange={(e) => setAdFormData({ ...adFormData, customCategory: e.target.value })}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        placeholder="Enter custom category name"
+                        maxLength="50"
+                      />
+                    </div>
+                  )}
+                  {adFormData.categoryName && adFormData.categoryName !== 'Other' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Subcategory</label>
+                      <select
+                        value={adFormData.subcategory}
+                        onChange={(e) => setAdFormData({ ...adFormData, subcategory: e.target.value })}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                      >
+                        <option value="">Select Subcategory</option>
+                        {adCategories.find(c => c.name === adFormData.categoryName)?.subcategories?.map((sub) => (
+                          <option key={sub} value={sub}>{sub}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Location *</label>
+                      <input
+                        type="text"
+                        value={adFormData.location}
+                        onChange={(e) => setAdFormData({ ...adFormData, location: e.target.value })}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        placeholder="Area, Street (max 100 chars)"
+                        required
+                        maxLength="100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">City *</label>
+                      <select
+                        value={adFormData.city}
+                        onChange={(e) => setAdFormData({ ...adFormData, city: e.target.value })}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                        required
+                      >
+                        <option value="">Select City</option>
+                        <option value="Mumbai">Mumbai</option>
+                        <option value="Delhi">Delhi</option>
+                        <option value="Bangalore">Bangalore</option>
+                        <option value="Chennai">Chennai</option>
+                        <option value="Hyderabad">Hyderabad</option>
+                        <option value="Pune">Pune</option>
+                        <option value="Kolkata">Kolkata</option>
+                        <option value="Ahmedabad">Ahmedabad</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Condition *</label>
+                    <select
+                      value={adFormData.condition}
+                      onChange={(e) => setAdFormData({ ...adFormData, condition: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                      required
+                    >
+                      <option value="">Select Condition</option>
+                      <option value="New">New</option>
+                      <option value="Like New">Like New</option>
+                      <option value="Good">Good</option>
+                      <option value="Fair">Fair</option>
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
+                      <input
+                        type="tel"
+                        value={adFormData.phone}
+                        onChange={(e) => setAdFormData({ ...adFormData, phone: e.target.value })}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        placeholder="+91 XXXXX XXXXX"
+                        pattern="[0-9+\-\s]+"
+                        maxLength="15"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                      <input
+                        type="email"
+                        value={adFormData.email}
+                        onChange={(e) => setAdFormData({ ...adFormData, email: e.target.value })}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        placeholder="your@email.com"
+                        maxLength="100"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Primary Image URL *</label>
+                    <input
+                      type="url"
+                      value={adFormData.imageUrl}
+                      onChange={(e) => setAdFormData({ ...adFormData, imageUrl: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      placeholder="https://example.com/image.jpg"
+                      required
+                      pattern="https?://.+"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Additional Image URLs (comma separated)</label>
+                    <textarea
+                      value={adFormData.imageUrls}
+                      onChange={(e) => setAdFormData({ ...adFormData, imageUrls: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+                      rows="2"
+                      placeholder="https://example.com/image2.jpg, https://example.com/image3.jpg"
+                      maxLength="1000"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <label className="flex items-center cursor-pointer bg-white px-4 py-3 border border-gray-200 rounded-xl">
+                      <input
+                        type="checkbox"
+                        checked={adFormData.negotiable}
+                        onChange={(e) => setAdFormData({ ...adFormData, negotiable: e.target.checked })}
+                        className="w-4 h-4 text-blue-500 rounded focus:ring-blue-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Price is negotiable</span>
+                    </label>
+                    <label className="flex items-center cursor-pointer bg-white px-4 py-3 border border-gray-200 rounded-xl">
+                      <input
+                        type="checkbox"
+                        checked={adFormData.isFeatured}
+                        onChange={(e) => setAdFormData({ ...adFormData, isFeatured: e.target.checked })}
+                        className="w-5 h-5 text-yellow-500 rounded focus:ring-yellow-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Featured Ad</span>
+                    </label>
+                    <label className="flex items-center cursor-pointer bg-white px-4 py-3 border border-gray-200 rounded-xl">
+                      <input
+                        type="checkbox"
+                        checked={adFormData.isUrgent}
+                        onChange={(e) => setAdFormData({ ...adFormData, isUrgent: e.target.checked })}
+                        className="w-4 h-4 text-red-500 rounded focus:ring-red-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Urgent Sale</span>
+                    </label>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <select
+                      value={adFormData.status}
+                      onChange={(e) => setAdFormData({ ...adFormData, status: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                      <option value="Pending">Pending</option>
+                    </select>
+                  </div>
+                  <div className="flex space-x-4 pt-4">
+                    <button
+                      type="submit"
+                      className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all shadow-md"
+                    >
+                      {editModal.data?.id ? 'Update Ad' : 'Create Ad'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditModal({ isOpen: false, type: null, data: null });
+                        setAdFormData({
+                          title: '',
+                          description: '',
+                          price: '',
+                          categoryName: '',
+                          subcategory: '',
+                          customCategory: '',
+                          location: '',
+                          city: '',
+                          condition: '',
+                          phone: '',
+                          email: '',
+                          imageUrl: '',
+                          imageUrls: '',
+                          negotiable: false,
+                          isFeatured: false,
+                          isUrgent: false,
+                          status: 'Active'
+                        });
+                      }}
+                      className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-all"
+                    >
+                      Cancel
                     </button>
                   </div>
                 </form>

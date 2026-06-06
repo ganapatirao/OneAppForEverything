@@ -2,24 +2,9 @@ import { useState, useEffect } from 'react';
 import { Plus, Filter, MapPin, MessageCircle, Phone, Search, Eye, Calendar, X, Star, ChevronLeft, ChevronRight, Briefcase, Car, Home, Smartphone, Heart, User, Shield, Zap, Tag } from 'lucide-react';
 import { advertisingApi } from '../services/api';
 
-const comprehensiveCategories = [
-  { id: '1', name: 'Jobs', emoji: '💼', subcategories: ['IT/Software', 'Sales/Marketing', 'Accounting/Finance', 'Education/Teaching', 'Healthcare', 'Engineering', 'Hospitality', 'Customer Service', 'HR', 'Legal', 'Manufacturing', 'Other'] },
-  { id: '2', name: 'Vehicles', emoji: '🚗', subcategories: ['Cars', 'Motorcycles', 'Scooters', 'Bicycles', 'Commercial Vehicles', 'Spare Parts', 'Boats', 'Other Vehicles'] },
-  { id: '3', name: 'Real Estate', emoji: '🏠', subcategories: ['Houses', 'Apartments', 'Land/Plots', 'Commercial Property', 'PG/Hostels', 'Office Space', 'Shops', 'Other Properties'] },
-  { id: '4', name: 'Mobiles', emoji: '📱', subcategories: ['Smartphones', 'Tablets', 'Accessories', 'Wearables', 'Repairs', 'Other Mobiles'] },
-  { id: '5', name: 'Electronics', emoji: '🔌', subcategories: ['Laptops', 'Computers', 'TVs', 'Cameras', 'Gaming', 'Audio', 'Home Appliances', 'Other Electronics'] },
-  { id: '6', name: 'Fashion', emoji: '👗', subcategories: ['Men', 'Women', 'Kids', 'Footwear', 'Jewelry', 'Watches', 'Bags', 'Other Fashion'] },
-  { id: '7', name: 'Home & Living', emoji: '🏡', subcategories: ['Furniture', 'Home Decor', 'Kitchen', 'Garden', 'Pets', 'Other Home'] },
-  { id: '8', name: 'Services', emoji: '🔧', subcategories: ['Education/Tutoring', 'Health & Fitness', 'Beauty/Wellness', 'Home Services', 'Event Services', 'Professional Services', 'Other Services'] },
-  { id: '9', name: 'Pets', emoji: '🐕', subcategories: ['Dogs', 'Cats', 'Birds', 'Fish', 'Other Pets', 'Pet Accessories', 'Pet Services'] },
-  { id: '10', name: 'Matrimonial', emoji: '💍', subcategories: ['Bride', 'Groom', 'Matrimonial Services'] },
-  { id: '11', name: 'Community', emoji: '👥', subcategories: ['Events', 'Activities', 'Lost & Found', 'Classes', 'Volunteers', 'Other Community'] },
-  { id: '12', name: 'Business', emoji: '💼', subcategories: ['Business for Sale', 'Franchise', 'Industrial Machinery', 'Office Equipment', 'Other Business'] }
-];
-
 export default function Advertising() {
   const [ads, setAds] = useState([]);
-  const [categories, setCategories] = useState(comprehensiveCategories);
+  const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedSubcategory, setSelectedSubcategory] = useState('All');
   const [showPostAd, setShowPostAd] = useState(false);
@@ -30,6 +15,12 @@ export default function Advertising() {
   const [chatMessage, setChatMessage] = useState('');
   const [chatPhone, setChatPhone] = useState('');
   const [chatEmail, setChatEmail] = useState('');
+  const [chatErrors, setChatErrors] = useState({
+    message: '',
+    phone: '',
+    email: '',
+    contact: ''
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [cityFilter, setCityFilter] = useState('');
@@ -39,6 +30,7 @@ export default function Advertising() {
   const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
   const [showUrgentOnly, setShowUrgentOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || 'user');
   const [newAd, setNewAd] = useState({
     title: '',
     description: '',
@@ -88,6 +80,72 @@ export default function Advertising() {
 
   const handlePostAd = async (e) => {
     e.preventDefault();
+    
+    if (!newAd.title.trim()) {
+      alert('Please enter a title');
+      return;
+    }
+    if (newAd.title.length > 100) {
+      alert('Title must be less than 100 characters');
+      return;
+    }
+    if (!newAd.description.trim()) {
+      alert('Please enter a description');
+      return;
+    }
+    if (newAd.description.length > 2000) {
+      alert('Description must be less than 2000 characters');
+      return;
+    }
+    if (!newAd.price || parseFloat(newAd.price) <= 0) {
+      alert('Please enter a valid price');
+      return;
+    }
+    if (!newAd.categoryName) {
+      alert('Please select a category');
+      return;
+    }
+    if (!newAd.subcategory) {
+      alert('Please select a subcategory');
+      return;
+    }
+    if (!newAd.location.trim()) {
+      alert('Please enter a location');
+      return;
+    }
+    if (newAd.location.length > 100) {
+      alert('Location must be less than 100 characters');
+      return;
+    }
+    if (!newAd.city) {
+      alert('Please select a city');
+      return;
+    }
+    if (!newAd.condition) {
+      alert('Please select a condition');
+      return;
+    }
+    if (!newAd.phone.trim()) {
+      alert('Please enter a phone number');
+      return;
+    }
+    if (!/^\+?[\d\s-]{10,}$/.test(newAd.phone)) {
+      alert('Please enter a valid phone number');
+      return;
+    }
+    if (!newAd.email.trim()) {
+      alert('Please enter an email');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newAd.email)) {
+      alert('Please enter a valid email address');
+      return;
+    }
+    if (!newAd.imageUrl.trim() && !newAd.imageUrls.trim()) {
+      alert('Please enter at least one image URL');
+      return;
+    }
+
     try {
       const userId = localStorage.getItem('userId');
       const userName = localStorage.getItem('userName');
@@ -100,6 +158,7 @@ export default function Advertising() {
         sellerEmail: userEmail || '',
         sellerPhone: newAd.phone,
         imageUrls: newAd.imageUrls ? newAd.imageUrls.split(',').map(url => url.trim()) : [newAd.imageUrl],
+        phoneDisplayStatus: 'Visible',
         views: 0,
         postedDate: new Date().toISOString()
       };
@@ -176,11 +235,34 @@ export default function Advertising() {
     setShowChatModal(true);
     setChatPhone('');
     setChatEmail('');
+    setChatErrors({ message: '', phone: '', email: '', contact: '' });
   };
 
   const handleSendChat = async (e) => {
     e.preventDefault();
-    if (!chatMessage.trim()) return;
+
+    setChatErrors({ message: '', phone: '', email: '', contact: '' });
+
+    if (!chatMessage.trim()) {
+      setChatErrors(prev => ({ ...prev, message: 'Please enter a message' }));
+      return;
+    }
+
+    if (!chatPhone.trim() && !chatEmail.trim()) {
+      setChatErrors(prev => ({ ...prev, contact: 'Please enter either phone number or email' }));
+      return;
+    }
+
+    if (chatPhone && !/^\+?[\d\s-]{10,}$/.test(chatPhone)) {
+      setChatErrors(prev => ({ ...prev, phone: 'Please enter a valid phone number (min 10 digits)' }));
+      return;
+    }
+
+    if (chatEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(chatEmail)) {
+      setChatErrors(prev => ({ ...prev, email: 'Please enter a valid email address' }));
+      return;
+    }
+
     try {
       const userId = localStorage.getItem('userId');
       const userName = localStorage.getItem('userName');
@@ -205,6 +287,7 @@ export default function Advertising() {
       setChatMessage('');
       setChatPhone('');
       setChatEmail('');
+      setChatErrors({ message: '', phone: '', email: '', contact: '' });
       setShowChatModal(false);
     } catch (error) {
       console.error('Error sending message:', error);
@@ -265,13 +348,15 @@ export default function Advertising() {
             <h1 className="text-4xl font-bold text-gray-800">India Classifieds</h1>
             <p className="text-gray-600 mt-1">Buy & sell everything from jobs to real estate in your local area</p>
           </div>
-          <button
-            onClick={() => setShowPostAd(true)}
-            className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-orange-600 hover:to-orange-700 transition-all flex items-center shadow-lg"
-          >
-            <Plus size={20} className="mr-2" />
-            Post Free Ad
-          </button>
+          {userRole === 'advertiser' && (
+            <button
+              onClick={() => setShowPostAd(true)}
+              className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-orange-600 hover:to-orange-700 transition-all flex items-center shadow-lg"
+            >
+              <Plus size={20} className="mr-2" />
+              Post Free Ad
+            </button>
+          )}
         </div>
 
         {/* Search and Filter Bar */}
@@ -300,25 +385,27 @@ export default function Advertising() {
             </div>
           </div>
           {showFilters && (
-            <div className="border-t bg-gray-50 p-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="border-t bg-gradient-to-r from-gray-50 to-orange-50 p-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                 <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Location</label>
                   <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                     <input
                       type="text"
-                      placeholder="Location"
+                      placeholder="Enter location..."
                       value={locationFilter}
                       onChange={(e) => setLocationFilter(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm bg-white shadow-sm h-10"
                     />
                   </div>
                 </div>
                 <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">City</label>
                   <select
                     value={cityFilter}
                     onChange={(e) => setCityFilter(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm bg-white shadow-sm h-10"
                   >
                     <option value="">All Cities</option>
                     <option value="Mumbai">Mumbai</option>
@@ -331,64 +418,97 @@ export default function Advertising() {
                     <option value="Ahmedabad">Ahmedabad</option>
                   </select>
                 </div>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    placeholder="Min Price (₹)"
-                    value={priceRange.min}
-                    onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
-                    className="flex-1 px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Max Price (₹)"
-                    value={priceRange.max}
-                    onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
-                    className="flex-1 px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Price Range</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      placeholder="Min"
+                      value={priceRange.min}
+                      onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
+                      className="w-1/2 px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm bg-white shadow-sm h-10"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Max"
+                      value={priceRange.max}
+                      onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
+                      className="w-1/2 px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm bg-white shadow-sm h-10"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Condition</label>
+                  <select
+                    value={conditionFilter}
+                    onChange={(e) => setConditionFilter(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm bg-white shadow-sm h-10"
+                  >
+                    <option value="All">All Conditions</option>
+                    <option value="New">New</option>
+                    <option value="Like New">Like New</option>
+                    <option value="Good">Good</option>
+                    <option value="Fair">Fair</option>
+                  </select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <select
-                  value={conditionFilter}
-                  onChange={(e) => setConditionFilter(e.target.value)}
-                  className="px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                >
-                  <option value="All">All Conditions</option>
-                  <option value="New">New</option>
-                  <option value="Like New">Like New</option>
-                  <option value="Good">Good</option>
-                  <option value="Fair">Fair</option>
-                </select>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                >
-                  <option value="newest">Newest First</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="price-low">Price: Low to High</option>
-                  <option value="price-high">Price: High to Low</option>
-                  <option value="popular">Most Popular</option>
-                </select>
-                <label className="flex items-center cursor-pointer bg-white px-4 py-3 border border-gray-300 rounded-lg">
-                  <input
-                    type="checkbox"
-                    checked={showFeaturedOnly}
-                    onChange={(e) => setShowFeaturedOnly(e.target.checked)}
-                    className="w-4 h-4 text-orange-500 rounded focus:ring-orange-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Featured Only</span>
-                </label>
-                <label className="flex items-center cursor-pointer bg-white px-4 py-3 border border-gray-300 rounded-lg">
-                  <input
-                    type="checkbox"
-                    checked={showUrgentOnly}
-                    onChange={(e) => setShowUrgentOnly(e.target.checked)}
-                    className="w-4 h-4 text-orange-500 rounded focus:ring-orange-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Urgent Only</span>
-                </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Sort By</label>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm bg-white shadow-sm h-10"
+                  >
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                    <option value="popular">Most Popular</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Featured</label>
+                  <label className="flex items-center cursor-pointer bg-white px-4 py-2.5 border border-gray-200 rounded-xl shadow-sm hover:border-orange-300 transition-colors h-10">
+                    <input
+                      type="checkbox"
+                      checked={showFeaturedOnly}
+                      onChange={(e) => setShowFeaturedOnly(e.target.checked)}
+                      className="w-4 h-4 text-orange-500 rounded focus:ring-orange-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Show Featured</span>
+                  </label>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Urgent</label>
+                  <label className="flex items-center cursor-pointer bg-white px-4 py-2.5 border border-gray-200 rounded-xl shadow-sm hover:border-red-300 transition-colors h-10">
+                    <input
+                      type="checkbox"
+                      checked={showUrgentOnly}
+                      onChange={(e) => setShowUrgentOnly(e.target.checked)}
+                      className="w-4 h-4 text-red-500 rounded focus:ring-red-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Show Urgent</span>
+                  </label>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Actions</label>
+                  <button
+                    onClick={() => {
+                      setSearchTerm('');
+                      setLocationFilter('');
+                      setCityFilter('');
+                      setPriceRange({ min: '', max: '' });
+                      setConditionFilter('All');
+                      setSortBy('newest');
+                      setShowFeaturedOnly(false);
+                      setShowUrgentOnly(false);
+                    }}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-100 hover:border-gray-300 transition-all shadow-sm h-10"
+                  >
+                    Clear All
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -568,8 +688,8 @@ export default function Advertising() {
                     type="text"
                     value={newAd.title}
                     onChange={(e) => setNewAd({ ...newAd, title: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    placeholder="What are you selling?"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                    placeholder="What are you selling? (max 100 chars)"
                     required
                     maxLength="100"
                   />
@@ -579,7 +699,7 @@ export default function Advertising() {
                   <textarea
                     value={newAd.description}
                     onChange={(e) => setNewAd({ ...newAd, description: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm resize-none"
                     rows="4"
                     placeholder="Describe your item in detail..."
                     required
@@ -594,7 +714,7 @@ export default function Advertising() {
                       step="1"
                       value={newAd.price}
                       onChange={(e) => setNewAd({ ...newAd, price: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
                       placeholder="Enter price"
                       required
                       min="0"
@@ -605,7 +725,7 @@ export default function Advertising() {
                     <select
                       value={newAd.categoryName}
                       onChange={(e) => setNewAd({ ...newAd, categoryName: e.target.value, subcategory: '' })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm bg-white"
                       required
                     >
                       <option value="">Select Category</option>
@@ -621,7 +741,7 @@ export default function Advertising() {
                     <select
                       value={newAd.subcategory}
                       onChange={(e) => setNewAd({ ...newAd, subcategory: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm bg-white"
                     >
                       <option value="">Select Subcategory</option>
                       {categories.find(c => c.name === newAd.categoryName)?.subcategories?.map((sub) => (
@@ -637,8 +757,8 @@ export default function Advertising() {
                       type="text"
                       value={newAd.location}
                       onChange={(e) => setNewAd({ ...newAd, location: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      placeholder="Area, Street"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                      placeholder="Area, Street (max 100 chars)"
                       required
                       maxLength="100"
                     />
@@ -648,7 +768,7 @@ export default function Advertising() {
                     <select
                       value={newAd.city}
                       onChange={(e) => setNewAd({ ...newAd, city: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm bg-white"
                       required
                     >
                       <option value="">Select City</option>
@@ -668,7 +788,7 @@ export default function Advertising() {
                   <select
                     value={newAd.condition}
                     onChange={(e) => setNewAd({ ...newAd, condition: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm bg-white"
                     required
                   >
                     <option value="">Select Condition</option>
@@ -680,26 +800,28 @@ export default function Advertising() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
                     <input
                       type="tel"
                       value={newAd.phone}
                       onChange={(e) => setNewAd({ ...newAd, phone: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
                       placeholder="+91 XXXXX XXXXX"
                       pattern="[0-9+\-\s]+"
                       maxLength="15"
+                      required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
                     <input
                       type="email"
                       value={newAd.email}
                       onChange={(e) => setNewAd({ ...newAd, email: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
                       placeholder="your@email.com"
                       maxLength="100"
+                      required
                     />
                   </div>
                 </div>
@@ -709,7 +831,7 @@ export default function Advertising() {
                     type="url"
                     value={newAd.imageUrl}
                     onChange={(e) => setNewAd({ ...newAd, imageUrl: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
                     placeholder="https://example.com/image.jpg"
                     required
                     pattern="https?://.+"
@@ -720,24 +842,24 @@ export default function Advertising() {
                   <textarea
                     value={newAd.imageUrls}
                     onChange={(e) => setNewAd({ ...newAd, imageUrls: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm resize-none"
                     rows="2"
                     placeholder="https://example.com/image2.jpg, https://example.com/image3.jpg"
                     maxLength="1000"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <label className="flex items-center cursor-pointer">
+                  <label className="flex items-center cursor-pointer bg-white px-4 py-3 border border-gray-200 rounded-xl">
                     <input
                       type="checkbox"
                       id="negotiable"
                       checked={newAd.negotiable}
                       onChange={(e) => setNewAd({ ...newAd, negotiable: e.target.checked })}
-                      className="w-5 h-5 text-orange-500 rounded focus:ring-orange-500"
+                      className="w-4 h-4 text-orange-500 rounded focus:ring-orange-500"
                     />
                     <span className="ml-2 text-sm text-gray-700">Price is negotiable</span>
                   </label>
-                  <label className="flex items-center cursor-pointer">
+                  <label className="flex items-center cursor-pointer bg-white px-4 py-3 border border-gray-200 rounded-xl">
                     <input
                       type="checkbox"
                       id="featured"
@@ -747,13 +869,13 @@ export default function Advertising() {
                     />
                     <span className="ml-2 text-sm text-gray-700">Featured Ad (₹99)</span>
                   </label>
-                  <label className="flex items-center cursor-pointer">
+                  <label className="flex items-center cursor-pointer bg-white px-4 py-3 border border-gray-200 rounded-xl">
                     <input
                       type="checkbox"
                       id="urgent"
                       checked={newAd.isUrgent}
                       onChange={(e) => setNewAd({ ...newAd, isUrgent: e.target.checked })}
-                      className="w-5 h-5 text-red-500 rounded focus:ring-red-500"
+                      className="w-4 h-4 text-red-500 rounded focus:ring-red-500"
                     />
                     <span className="ml-2 text-sm text-gray-700">Urgent Sale (₹49)</span>
                   </label>
@@ -761,7 +883,7 @@ export default function Advertising() {
                 <div className="flex space-x-4 pt-4">
                   <button
                     type="submit"
-                    className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 rounded-lg font-semibold hover:from-orange-600 hover:to-orange-700 transition-all"
+                    className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 rounded-xl font-semibold hover:from-orange-600 hover:to-orange-700 transition-all shadow-md"
                   >
                     Post Ad Now
                   </button>
@@ -865,13 +987,10 @@ export default function Advertising() {
                       Message
                     </button>
                     {selectedAd.sellerPhone && (
-                      <button
-                        onClick={() => handleCallSeller(selectedAd.sellerPhone)}
-                        className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transition-all flex items-center justify-center shadow-md"
-                      >
+                      <div className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center shadow-md">
                         <Phone size={18} className="mr-2" />
                         {maskPhoneNumber(selectedAd.sellerPhone, selectedAd.phoneDisplayStatus)}
-                      </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -896,29 +1015,52 @@ export default function Advertising() {
                   <p className="text-sm font-medium text-gray-800">{selectedAd.title}</p>
                 </div>
                 <form onSubmit={handleSendChat} className="space-y-3">
-                  <input
-                    type="tel"
-                    value={chatPhone}
-                    onChange={(e) => setChatPhone(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
-                    placeholder="Phone (optional)"
-                  />
-                  <input
-                    type="email"
-                    value={chatEmail}
-                    onChange={(e) => setChatEmail(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
-                    placeholder="Email (optional)"
-                  />
-                  <textarea
-                    value={chatMessage}
-                    onChange={(e) => setChatMessage(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm resize-none"
-                    rows="3"
-                    placeholder="Your message..."
-                    required
-                    maxLength="500"
-                  />
+                  <div>
+                    <input
+                      type="tel"
+                      value={chatPhone}
+                      onChange={(e) => {
+                        setChatPhone(e.target.value);
+                        if (chatErrors.phone) setChatErrors(prev => ({ ...prev, phone: '' }));
+                        if (chatErrors.contact) setChatErrors(prev => ({ ...prev, contact: '' }));
+                      }}
+                      className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:border-transparent text-sm ${chatErrors.phone ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-orange-500'}`}
+                      placeholder="Phone (required if no email)"
+                      maxLength="15"
+                    />
+                    {chatErrors.phone && <p className="text-red-500 text-xs mt-1">{chatErrors.phone}</p>}
+                  </div>
+                  <div>
+                    <input
+                      type="email"
+                      value={chatEmail}
+                      onChange={(e) => {
+                        setChatEmail(e.target.value);
+                        if (chatErrors.email) setChatErrors(prev => ({ ...prev, email: '' }));
+                        if (chatErrors.contact) setChatErrors(prev => ({ ...prev, contact: '' }));
+                      }}
+                      className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:border-transparent text-sm ${chatErrors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-orange-500'}`}
+                      placeholder="Email (required if no phone)"
+                      maxLength="100"
+                    />
+                    {chatErrors.email && <p className="text-red-500 text-xs mt-1">{chatErrors.email}</p>}
+                  </div>
+                  {chatErrors.contact && <p className="text-red-500 text-xs">{chatErrors.contact}</p>}
+                  <div>
+                    <textarea
+                      value={chatMessage}
+                      onChange={(e) => {
+                        setChatMessage(e.target.value);
+                        if (chatErrors.message) setChatErrors(prev => ({ ...prev, message: '' }));
+                      }}
+                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:border-transparent text-sm resize-none ${chatErrors.message ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-orange-500'}`}
+                      rows="3"
+                      placeholder="Your message..."
+                      required
+                      maxLength="500"
+                    />
+                    {chatErrors.message && <p className="text-red-500 text-xs mt-1">{chatErrors.message}</p>}
+                  </div>
                   <button
                     type="submit"
                     className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 rounded-xl font-semibold hover:from-orange-600 hover:to-orange-700 transition-all shadow-md"

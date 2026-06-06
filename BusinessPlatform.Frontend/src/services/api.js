@@ -116,6 +116,8 @@ export const adminApi = {
   updateUserStatus: (id, isActive) => api.patch(`/admin/users/${id}/status`, { isActive }),
   getDashboard: () => api.get('/admin/dashboard'),
   getAllOrders: () => api.get('/admin/orders/all'),
+  updateOrderStatus: (id, status) => api.put(`/admin/orders/${id}/status`, { status }),
+  deleteOrder: (id) => api.delete(`/admin/orders/${id}`),
   // Products
   createProduct: (data) => api.post('/admin/products', data),
   updateProduct: (id, data) => api.put(`/admin/products/${id}`, data),
@@ -126,6 +128,10 @@ export const adminApi = {
   updateAd: (id, data) => api.put(`/admin/ads/${id}`, data),
   deleteAd: (id) => api.delete(`/admin/ads/${id}`),
   updateAdStatus: (id, status) => api.patch(`/admin/ads/${id}/status`, { status }),
+  // Ad Categories
+  getAdCategories: () => api.get('/admin/ad-categories'),
+  createAdCategory: (data) => api.post('/admin/ad-categories', data),
+  deleteAdCategory: (id) => api.delete(`/admin/ad-categories/${id}`),
   // Jobs
   createJob: (data) => api.post('/admin/jobs', data),
   updateJob: (id, data) => api.put(`/admin/jobs/${id}`, data),

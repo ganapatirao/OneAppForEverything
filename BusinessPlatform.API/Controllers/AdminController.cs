@@ -209,6 +209,31 @@ namespace BusinessPlatform.API.Controllers
             return Ok(orders);
         }
 
+        [HttpPut("orders/{id}/status")]
+        [Authorize]
+        public async Task<IActionResult> UpdateOrderStatus(string id, [FromBody] StatusUpdateRequest request)
+        {
+            var update = Builders<ShoppingOrder>.Update.Set(o => o.Status, request.Status);
+            var result = await _context.ShoppingOrders.UpdateOneAsync(o => o.Id == id, update);
+            if (result.MatchedCount == 0)
+            {
+                return NotFound(new { message = "Order not found" });
+            }
+            return Ok(new { message = "Order status updated successfully" });
+        }
+
+        [HttpDelete("orders/{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteOrder(string id)
+        {
+            var result = await _context.ShoppingOrders.DeleteOneAsync(o => o.Id == id);
+            if (result.DeletedCount == 0)
+            {
+                return NotFound(new { message = "Order not found" });
+            }
+            return Ok(new { message = "Order deleted successfully" });
+        }
+
         // Products CRUD
         [HttpPost("products")]
         [Authorize]
@@ -278,8 +303,31 @@ namespace BusinessPlatform.API.Controllers
         [Authorize]
         public async Task<IActionResult> CreateAd([FromBody] Advertisement ad)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { message = "Validation failed", errors = ModelState });
+            }
+
+            // Additional validation for image URLs
+            if (!string.IsNullOrEmpty(ad.ImageUrl) && !Uri.TryCreate(ad.ImageUrl, UriKind.Absolute, out _))
+            {
+                return BadRequest(new { message = "Invalid image URL format" });
+            }
+
+            if (ad.ImageUrls != null)
+            {
+                foreach (var url in ad.ImageUrls)
+                {
+                    if (!string.IsNullOrEmpty(url) && !Uri.TryCreate(url, UriKind.Absolute, out _))
+                    {
+                        return BadRequest(new { message = "Invalid image URL format in additional images" });
+                    }
+                }
+            }
+
             ad.Id = null;
             ad.CreatedAt = DateTime.UtcNow;
+            ad.UpdatedAt = DateTime.UtcNow;
             await _context.Advertisements.InsertOneAsync(ad);
             return Ok(new { message = "Advertisement created successfully", ad });
         }
@@ -288,7 +336,30 @@ namespace BusinessPlatform.API.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateAd(string id, [FromBody] Advertisement ad)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { message = "Validation failed", errors = ModelState });
+            }
+
+            // Additional validation for image URLs
+            if (!string.IsNullOrEmpty(ad.ImageUrl) && !Uri.TryCreate(ad.ImageUrl, UriKind.Absolute, out _))
+            {
+                return BadRequest(new { message = "Invalid image URL format" });
+            }
+
+            if (ad.ImageUrls != null)
+            {
+                foreach (var url in ad.ImageUrls)
+                {
+                    if (!string.IsNullOrEmpty(url) && !Uri.TryCreate(url, UriKind.Absolute, out _))
+                    {
+                        return BadRequest(new { message = "Invalid image URL format in additional images" });
+                    }
+                }
+            }
+
             ad.Id = id;
+            ad.UpdatedAt = DateTime.UtcNow;
             var result = await _context.Advertisements.ReplaceOneAsync(a => a.Id == id, ad);
             if (result.MatchedCount == 0)
             {
@@ -516,6 +587,37 @@ namespace BusinessPlatform.API.Controllers
                 return NotFound(new { message = "Movie not found" });
             }
             return Ok(new { message = "Movie status updated successfully" });
+        }
+
+        // Ad Categories
+        [HttpGet("ad-categories")]
+        [Authorize]
+        public async Task<IActionResult> GetAdCategories()
+        {
+            var categories = await _context.AdCategories.Find(_ => true).ToListAsync();
+            return Ok(categories);
+        }
+
+        [HttpPost("ad-categories")]
+        [Authorize]
+        public async Task<IActionResult> CreateAdCategory([FromBody] AdCategory category)
+        {
+            category.Id = null;
+            category.CreatedAt = DateTime.UtcNow;
+            await _context.AdCategories.InsertOneAsync(category);
+            return Ok(new { message = "Category created successfully", category });
+        }
+
+        [HttpDelete("ad-categories/{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteAdCategory(string id)
+        {
+            var result = await _context.AdCategories.DeleteOneAsync(c => c.Id == id);
+            if (result.DeletedCount == 0)
+            {
+                return NotFound(new { message = "Category not found" });
+            }
+            return Ok(new { message = "Category deleted successfully" });
         }
 
         // User Activate/Deactivate

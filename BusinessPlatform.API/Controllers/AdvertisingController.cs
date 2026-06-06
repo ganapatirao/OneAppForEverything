@@ -46,8 +46,31 @@ namespace BusinessPlatform.API.Controllers
         [Authorize]
         public async Task<IActionResult> CreateAd([FromBody] Advertisement ad)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { message = "Validation failed", errors = ModelState });
+            }
+
+            // Additional validation for image URLs
+            if (!string.IsNullOrEmpty(ad.ImageUrl) && !Uri.TryCreate(ad.ImageUrl, UriKind.Absolute, out _))
+            {
+                return BadRequest(new { message = "Invalid image URL format" });
+            }
+
+            if (ad.ImageUrls != null)
+            {
+                foreach (var url in ad.ImageUrls)
+                {
+                    if (!string.IsNullOrEmpty(url) && !Uri.TryCreate(url, UriKind.Absolute, out _))
+                    {
+                        return BadRequest(new { message = "Invalid image URL format in additional images" });
+                    }
+                }
+            }
+
             ad.Id = null;
             ad.CreatedAt = DateTime.UtcNow;
+            ad.UpdatedAt = DateTime.UtcNow;
             await _context.Advertisements.InsertOneAsync(ad);
             return Ok(new { message = "Advertisement created successfully", ad });
         }
@@ -56,7 +79,30 @@ namespace BusinessPlatform.API.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateAd(string id, [FromBody] Advertisement ad)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { message = "Validation failed", errors = ModelState });
+            }
+
+            // Additional validation for image URLs
+            if (!string.IsNullOrEmpty(ad.ImageUrl) && !Uri.TryCreate(ad.ImageUrl, UriKind.Absolute, out _))
+            {
+                return BadRequest(new { message = "Invalid image URL format" });
+            }
+
+            if (ad.ImageUrls != null)
+            {
+                foreach (var url in ad.ImageUrls)
+                {
+                    if (!string.IsNullOrEmpty(url) && !Uri.TryCreate(url, UriKind.Absolute, out _))
+                    {
+                        return BadRequest(new { message = "Invalid image URL format in additional images" });
+                    }
+                }
+            }
+
             ad.Id = id;
+            ad.UpdatedAt = DateTime.UtcNow;
             var result = await _context.Advertisements.ReplaceOneAsync(a => a.Id == id, ad);
             if (result.MatchedCount == 0)
             {
