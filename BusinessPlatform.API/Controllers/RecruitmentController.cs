@@ -20,7 +20,9 @@ namespace BusinessPlatform.API.Controllers
         [HttpGet("jobs")]
         public async Task<IActionResult> GetJobs()
         {
+            Console.WriteLine("GET /api/recruitment/jobs called");
             var jobs = await _context.Jobs.Find(_ => true).ToListAsync();
+            Console.WriteLine($"Found {jobs.Count} jobs");
             return Ok(jobs);
         }
 

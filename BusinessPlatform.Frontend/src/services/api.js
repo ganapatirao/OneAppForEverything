@@ -132,7 +132,10 @@ export const adminApi = {
   getAdCategories: () => api.get('/admin/ad-categories'),
   createAdCategory: (data) => api.post('/admin/ad-categories', data),
   deleteAdCategory: (id) => api.delete(`/admin/ad-categories/${id}`),
+  // Seed Data
+  seedData: () => api.post('/admin/seed-data'),
   // Jobs
+  getJobs: () => api.get('/admin/jobs'),
   createJob: (data) => api.post('/admin/jobs', data),
   updateJob: (id, data) => api.put(`/admin/jobs/${id}`, data),
   deleteJob: (id) => api.delete(`/admin/jobs/${id}`),

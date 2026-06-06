@@ -393,7 +393,31 @@ namespace BusinessPlatform.API.Controllers
             return Ok(new { message = "Advertisement status updated successfully" });
         }
 
+        // Seed Data
+        [HttpPost("seed-data")]
+        public async Task<IActionResult> SeedData()
+        {
+            try
+            {
+                var seedData = new SeedData(_context);
+                await seedData.SeedAsync();
+                return Ok(new { message = "Data seeded successfully" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Error seeding data", error = ex.Message });
+            }
+        }
+
         // Jobs CRUD
+        [HttpGet("jobs")]
+        [Authorize]
+        public async Task<IActionResult> GetJobs()
+        {
+            var jobs = await _context.Jobs.Find(_ => true).ToListAsync();
+            return Ok(jobs);
+        }
+
         [HttpPost("jobs")]
         [Authorize]
         public async Task<IActionResult> CreateJob([FromBody] Job job)

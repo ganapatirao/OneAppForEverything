@@ -1,5 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using System.ComponentModel.DataAnnotations;
 
 namespace BusinessPlatform.API.Models
 {
@@ -10,31 +11,57 @@ namespace BusinessPlatform.API.Models
         public string? Id { get; set; }
 
         [BsonElement("title")]
+        [Required(ErrorMessage = "Job title is required")]
+        [StringLength(100, MinimumLength = 5, ErrorMessage = "Job title must be between 5 and 100 characters")]
         public string Title { get; set; } = string.Empty;
 
         [BsonElement("company")]
+        [Required(ErrorMessage = "Company name is required")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "Company name must be between 2 and 100 characters")]
         public string Company { get; set; } = string.Empty;
 
         [BsonElement("location")]
+        [Required(ErrorMessage = "Location is required")]
+        [StringLength(50, ErrorMessage = "Location must not exceed 50 characters")]
         public string Location { get; set; } = string.Empty;
 
         [BsonElement("salary")]
+        [Required(ErrorMessage = "Salary range is required")]
+        [StringLength(30, ErrorMessage = "Salary range must not exceed 30 characters")]
         public string Salary { get; set; } = string.Empty;
 
         [BsonElement("type")]
+        [Required(ErrorMessage = "Job type is required")]
+        [StringLength(30, ErrorMessage = "Job type must not exceed 30 characters")]
         public string Type { get; set; } = string.Empty;
 
+        [BsonElement("experience")]
+        [StringLength(30, ErrorMessage = "Experience must not exceed 30 characters")]
+        public string Experience { get; set; } = string.Empty;
+
         [BsonElement("description")]
+        [Required(ErrorMessage = "Job description is required")]
+        [StringLength(5000, MinimumLength = 50, ErrorMessage = "Description must be between 50 and 5000 characters")]
         public string Description { get; set; } = string.Empty;
 
+        [BsonElement("requirements")]
+        [StringLength(2000, ErrorMessage = "Requirements must not exceed 2000 characters")]
+        public string Requirements { get; set; } = string.Empty;
+
         [BsonElement("skills")]
+        [Required(ErrorMessage = "Skills are required")]
+        [MinLength(1, ErrorMessage = "At least one skill is required")]
         public List<string> Skills { get; set; } = new List<string>();
 
         [BsonElement("status")]
+        [StringLength(20, ErrorMessage = "Status must not exceed 20 characters")]
         public string Status { get; set; } = "Active";
 
         [BsonElement("createdAt")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        [BsonElement("updatedAt")]
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     }
 
     public class JobApplication

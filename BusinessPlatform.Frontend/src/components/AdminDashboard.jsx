@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, ShoppingBag, Briefcase, Calendar, Film, Package, DollarSign, TrendingUp, Plus, Trash2, Edit, Power, PowerOff, X } from 'lucide-react';
+import { Users, ShoppingBag, Briefcase, Calendar, Film, Package, DollarSign, TrendingUp, Plus, Trash2, Edit, Power, PowerOff, X, RefreshCw } from 'lucide-react';
 import { adminApi, shoppingApi, advertisingApi, recruitmentApi, bookingApi } from '../services/api';
 
 export default function AdminDashboard() {
@@ -128,7 +128,7 @@ export default function AdminDashboard() {
 
   const loadJobs = async () => {
     try {
-      const response = await recruitmentApi.getJobs();
+      const response = await adminApi.getJobs();
       setJobs(response.data);
     } catch (error) {
       console.error('Error loading jobs:', error);
@@ -664,6 +664,26 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleSeedData = async () => {
+    if (confirm('This will clear all existing data and seed fresh data. Are you sure?')) {
+      try {
+        await adminApi.seedData();
+        alert('Database seeded successfully!');
+        loadDashboard();
+        loadUsers();
+        loadProducts();
+        loadAds();
+        loadJobs();
+        loadTransports();
+        loadPackages();
+        loadMovies();
+      } catch (error) {
+        console.error('Error seeding data:', error);
+        alert('Error seeding data. Please try again.');
+      }
+    }
+  };
+
   if (!dashboard) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -696,41 +716,52 @@ export default function AdminDashboard() {
 
         {/* Overview Tab */}
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Users</p>
-                  <p className="text-3xl font-bold text-gray-800">{dashboard.totalUsers}</p>
-                </div>
-                <Users size={32} className="text-blue-600" />
-              </div>
+          <div>
+            <div className="mb-6">
+              <button
+                onClick={handleSeedData}
+                className="bg-gradient-to-r from-green-600 to-teal-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-green-700 hover:to-teal-700 shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+              >
+                <RefreshCw size={20} />
+                Seed Database Data
+              </button>
             </div>
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Products</p>
-                  <p className="text-3xl font-bold text-gray-800">{dashboard.totalProducts}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Total Users</p>
+                    <p className="text-3xl font-bold text-gray-800">{dashboard.totalUsers}</p>
+                  </div>
+                  <Users size={32} className="text-blue-600" />
                 </div>
-                <ShoppingBag size={32} className="text-green-600" />
               </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Orders</p>
-                  <p className="text-3xl font-bold text-gray-800">{dashboard.totalOrders}</p>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Total Products</p>
+                    <p className="text-3xl font-bold text-gray-800">{dashboard.totalProducts}</p>
+                  </div>
+                  <ShoppingBag size={32} className="text-green-600" />
                 </div>
-                <TrendingUp size={32} className="text-purple-600" />
               </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Revenue</p>
-                  <p className="text-3xl font-bold text-gray-800">${dashboard.totalRevenue.toFixed(2)}</p>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Total Orders</p>
+                    <p className="text-3xl font-bold text-gray-800">{dashboard.totalOrders}</p>
+                  </div>
+                  <TrendingUp size={32} className="text-purple-600" />
                 </div>
-                <DollarSign size={32} className="text-yellow-600" />
+              </div>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Total Revenue</p>
+                    <p className="text-3xl font-bold text-gray-800">${dashboard.totalRevenue.toFixed(2)}</p>
+                  </div>
+                  <DollarSign size={32} className="text-yellow-600" />
+                </div>
               </div>
             </div>
           </div>
@@ -1041,52 +1072,61 @@ export default function AdminDashboard() {
 
         {/* Jobs Tab */}
         {activeTab === 'jobs' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-gray-800">Jobs ({jobs.length})</h2>
+          <div className="bg-white rounded-2xl shadow-lg p-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-3xl font-bold text-gray-800">Jobs Management ({jobs.length})</h2>
               <button
                 onClick={() => setEditModal({ isOpen: true, type: 'job', data: null })}
-                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all"
               >
-                <Plus size={16} />
+                <Plus size={20} />
                 Add Job
               </button>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead>
-                  <tr className="bg-gray-50">
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Title</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Company</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Location</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+                  <tr className="bg-gradient-to-r from-blue-50 to-purple-50">
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Job Title</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Company</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Location</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Salary</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Type</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Status</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {jobs.map((job) => (
-                    <tr key={job.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm text-gray-800">{job.title}</td>
-                      <td className="px-4 py-3 text-sm text-gray-800">{job.company}</td>
-                      <td className="px-4 py-3 text-sm text-gray-800">{job.location}</td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    <tr key={job.id} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-gray-800">{job.title}</div>
+                        <div className="text-sm text-gray-500">{job.experience || 'N/A'}</div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-700">{job.company}</td>
+                      <td className="px-6 py-4 text-sm text-gray-700">{job.location}</td>
+                      <td className="px-6 py-4 text-sm font-semibold text-green-600">{job.salary}</td>
+                      <td className="px-6 py-4">
+                        <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">{job.type}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                           job.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                         }`}>
                           {job.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 flex gap-2">
+                      <td className="px-6 py-4 flex gap-2">
                         <button
                           onClick={() => handleEditJob(job)}
-                          className="text-blue-600 hover:text-blue-800"
+                          className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
                           title="Edit"
                         >
-                          <Edit size={16} />
+                          <Edit size={18} />
                         </button>
                         <button
                           onClick={() => handleUpdateJobStatus(job.id, job.status === 'Active' ? 'Inactive' : 'Active')}
-                          className={job.status === 'Active' ? 'text-yellow-600 hover:text-yellow-800' : 'text-green-600 hover:text-green-800'}
+                          className={`p-2 rounded-lg transition-colors ${job.status === 'Active' ? 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200' : 'bg-green-100 text-green-600 hover:bg-green-200'}`}
                           title={job.status === 'Active' ? 'Deactivate' : 'Activate'}
                         >
                           {job.status === 'Active' ? <PowerOff size={16} /> : <Power size={16} />}
