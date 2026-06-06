@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Users, ShoppingBag, Briefcase, Calendar, Film, Package, DollarSign, TrendingUp, Plus, Trash2, Edit, Power, PowerOff, X } from 'lucide-react';
 import { adminApi, shoppingApi, advertisingApi, recruitmentApi, bookingApi } from '../services/api';
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [dashboard, setDashboard] = useState(null);
   const [allOrders, setAllOrders] = useState([]);
@@ -23,7 +25,16 @@ export default function AdminDashboard() {
   const [customCategoryDescription, setCustomCategoryDescription] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
 
+  // Filter states
+  const [productFilter, setProductFilter] = useState({ name: '', category: '', status: '' });
+
   useEffect(() => {
+    const role = localStorage.getItem('role');
+    const token = localStorage.getItem('token');
+    if (role !== 'Admin' || !token) {
+      navigate('/login');
+      return;
+    }
     loadDashboard();
     loadAllOrders();
     loadUsers();
@@ -34,7 +45,7 @@ export default function AdminDashboard() {
     loadPackages();
     loadMovies();
     loadCategories();
-  }, []);
+  }, [navigate]);
 
   const loadDashboard = async () => {
     try {
@@ -42,6 +53,10 @@ export default function AdminDashboard() {
       setDashboard(response.data);
     } catch (error) {
       console.error('Error loading dashboard:', error);
+      if (error.response?.status === 401) {
+        alert('Unauthorized. Please login as admin.');
+        navigate('/login');
+      }
     }
   };
 
@@ -441,11 +456,15 @@ export default function AdminDashboard() {
       if (editModal.data?.id) {
         await adminApi.updateUser(editModal.data.id, userData);
         alert('User updated successfully!');
+      } else {
+        await adminApi.register(userData);
+        alert('User created successfully!');
       }
       setEditModal({ isOpen: false, type: null, data: null });
       loadUsers();
     } catch (error) {
       console.error('Error saving user:', error);
+      alert(error.response?.data?.message || 'Error saving user. Please try again.');
     }
   };
 
@@ -534,6 +553,34 @@ export default function AdminDashboard() {
                 Add Product
               </button>
             </div>
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <input
+                type="text"
+                placeholder="Search by name..."
+                value={productFilter.name}
+                onChange={(e) => setProductFilter({ ...productFilter, name: e.target.value })}
+                className="px-3 py-2 border border-gray-300 rounded-lg"
+              />
+              <select
+                value={productFilter.category}
+                onChange={(e) => setProductFilter({ ...productFilter, category: e.target.value })}
+                className="px-3 py-2 border border-gray-300 rounded-lg"
+              >
+                <option value="">All Categories</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.name}>{cat.name}</option>
+                ))}
+              </select>
+              <select
+                value={productFilter.status}
+                onChange={(e) => setProductFilter({ ...productFilter, status: e.target.value })}
+                className="px-3 py-2 border border-gray-300 rounded-lg"
+              >
+                <option value="">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead>
@@ -548,7 +595,14 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {products.map((product) => (
+                  {products
+                    .filter(p => {
+                      const matchName = p.name?.toLowerCase().includes(productFilter.name.toLowerCase());
+                      const matchCategory = !productFilter.category || p.categoryName === productFilter.category;
+                      const matchStatus = !productFilter.status || p.status === productFilter.status;
+                      return matchName && matchCategory && matchStatus;
+                    })
+                    .map((product) => (
                     <tr key={product.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 text-sm text-gray-800">{product.name}</td>
                       <td className="px-4 py-3 text-sm text-gray-800">{product.categoryName}</td>
@@ -946,7 +1000,8 @@ export default function AdminDashboard() {
                 <thead>
                   <tr className="bg-gray-50">
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Order ID</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">User</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">User Name</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">User ID</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Total</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Date</th>
@@ -958,18 +1013,20 @@ export default function AdminDashboard() {
                     <tr key={order.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 text-sm text-gray-800">{order.id.substring(0, 8)}...</td>
                       <td className="px-4 py-3 text-sm text-gray-800">{order.userName}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{order.userId?.substring(0, 8)}...</td>
                       <td className="px-4 py-3 text-sm text-gray-800">${order.total.toFixed(2)}</td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
                           order.status === 'Shipped' ? 'bg-yellow-100 text-yellow-800' :
+                          order.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
                           'bg-blue-100 text-blue-800'
                         }`}>
                           {order.status}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 flex gap-2">
                         <select
                           value={order.status}
                           onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
@@ -980,6 +1037,20 @@ export default function AdminDashboard() {
                           <option value="Delivered">Delivered</option>
                           <option value="Cancelled">Cancelled</option>
                         </select>
+                        <button
+                          onClick={() => {
+                            if (confirm('Are you sure you want to delete this order?')) {
+                              shoppingApi.deleteOrder(order.id).then(() => {
+                                loadAllOrders();
+                                alert('Order deleted successfully!');
+                              }).catch(err => console.error('Error deleting order:', err));
+                            }
+                          }}
+                          className="text-red-600 hover:text-red-800"
+                          title="Delete"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -994,13 +1065,22 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-gray-800">Users ({users.length})</h2>
+              <button
+                onClick={() => setEditModal({ isOpen: true, type: 'user', data: null })}
+                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              >
+                <Plus size={16} />
+                Add User
+              </button>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead>
                   <tr className="bg-gray-50">
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Name</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Username</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Full Name</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Email</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Phone</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Role</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
@@ -1009,8 +1089,10 @@ export default function AdminDashboard() {
                 <tbody>
                   {users.map((user) => (
                     <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm text-gray-800">{user.username}</td>
                       <td className="px-4 py-3 text-sm text-gray-800">{user.fullName}</td>
                       <td className="px-4 py-3 text-sm text-gray-800">{user.email}</td>
+                      <td className="px-4 py-3 text-sm text-gray-800">{user.phone}</td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           user.role === 'Admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
@@ -1058,8 +1140,8 @@ export default function AdminDashboard() {
 
         {/* Edit Modal */}
         {editModal.isOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-xl max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-bold text-gray-800">
                   {editModal.data ? `Edit ${editModal.type.charAt(0).toUpperCase() + editModal.type.slice(1)}` : `Add ${editModal.type.charAt(0).toUpperCase() + editModal.type.slice(1)}`}
@@ -1073,20 +1155,36 @@ export default function AdminDashboard() {
               </div>
 
               {editModal.type === 'product' && (
-                <form onSubmit={(e) => { 
-                  e.preventDefault(); 
-                  const categoryName = selectedCategory === 'other' 
-                    ? customCategory 
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const categoryName = selectedCategory === 'other'
+                    ? customCategory
                     : selectedCategory;
-                  handleSaveProduct({ 
-                    name: e.target.name.value, 
-                    description: e.target.description.value, 
-                    price: parseFloat(e.target.price.value), 
-                    stock: parseInt(e.target.stock.value), 
-                    seller: e.target.seller.value, 
-                    imageUrl: e.target.imageUrl.value, 
-                    status: e.target.status.value, 
-                    categoryName: categoryName 
+                  const imageUrlsValue = e.target.imageUrls.value;
+                  const imageUrlsArray = imageUrlsValue
+                    ? imageUrlsValue.split('\n').map(url => url.trim()).filter(url => url)
+                    : [];
+                  const prosValue = e.target.pros.value;
+                  const prosArray = prosValue
+                    ? prosValue.split('\n').map(p => p.trim()).filter(p => p)
+                    : [];
+                  const consValue = e.target.cons.value;
+                  const consArray = consValue
+                    ? consValue.split('\n').map(c => c.trim()).filter(c => c)
+                    : [];
+                  handleSaveProduct({
+                    name: e.target.name.value,
+                    description: e.target.description.value,
+                    price: parseFloat(e.target.price.value),
+                    stock: parseInt(e.target.stock.value),
+                    seller: e.target.seller.value,
+                    imageUrl: e.target.imageUrl.value,
+                    imageUrls: imageUrlsArray,
+                    rating: parseFloat(e.target.rating.value) || 0,
+                    pros: prosArray,
+                    cons: consArray,
+                    status: e.target.status.value,
+                    categoryName: categoryName
                   });
                   setCustomCategory('');
                   setSelectedCategory('');
@@ -1094,36 +1192,76 @@ export default function AdminDashboard() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                      <input name="name" defaultValue={editModal.data?.name} className="w-full px-3 py-2 border border-gray-300 rounded-lg" required />
+                      <input name="name" defaultValue={editModal.data?.name} className="w-full px-3 py-2 border border-gray-300 rounded-lg" required maxLength="200" pattern="[a-zA-Z0-9\s\-_.,&()@#%]+" title="Only letters, numbers, spaces and common punctuation allowed" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                      <textarea name="description" defaultValue={editModal.data?.description} className="w-full px-3 py-2 border border-gray-300 rounded-lg" rows="3" />
+                      <textarea name="description" defaultValue={editModal.data?.description} className="w-full px-3 py-2 border border-gray-300 rounded-lg" rows="3" maxLength="2000" />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
-                        <input name="price" type="number" step="0.01" defaultValue={editModal.data?.price} className="w-full px-3 py-2 border border-gray-300 rounded-lg" required />
+                        <input name="price" type="number" step="0.01" min="0" max="10000000" defaultValue={editModal.data?.price} className="w-full px-3 py-2 border border-gray-300 rounded-lg" required maxLength="10" />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Stock</label>
-                        <input name="stock" type="number" defaultValue={editModal.data?.stock} className="w-full px-3 py-2 border border-gray-300 rounded-lg" required />
+                        <input name="stock" type="number" min="0" max="10000" defaultValue={editModal.data?.stock} className="w-full px-3 py-2 border border-gray-300 rounded-lg" required maxLength="5" />
                       </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Seller</label>
-                      <input name="seller" defaultValue={editModal.data?.seller} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                      <input name="seller" defaultValue={editModal.data?.seller} className="w-full px-3 py-2 border border-gray-300 rounded-lg" maxLength="100" pattern="[a-zA-Z0-9\s\-_.,&()@#%]+" title="Only letters, numbers, spaces and common punctuation allowed" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
-                      <input name="imageUrl" defaultValue={editModal.data?.imageUrl} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Primary Image URL</label>
+                      <input name="imageUrl" defaultValue={editModal.data?.imageUrl} className="w-full px-3 py-2 border border-gray-300 rounded-lg" pattern="https?://.+" maxLength="500" title="Please enter a valid URL starting with http:// or https://" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Additional Image URLs (one per line)</label>
+                      <textarea
+                        name="imageUrls"
+                        defaultValue={editModal.data?.imageUrls ? editModal.data.imageUrls.join('\n') : ''}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        rows="3"
+                        maxLength="5000"
+                        placeholder="Enter each image URL on a new line"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Rating (0-5)</label>
+                        <input name="rating" type="number" step="0.1" min="0" max="5" defaultValue={editModal.data?.rating || 0} className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100" readOnly />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Pros (one per line)</label>
+                      <textarea
+                        name="pros"
+                        defaultValue={editModal.data?.pros ? editModal.data.pros.join('\n') : ''}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        rows="3"
+                        maxLength="1000"
+                        placeholder="Enter each pro on a new line"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Cons (one per line)</label>
+                      <textarea
+                        name="cons"
+                        defaultValue={editModal.data?.cons ? editModal.data.cons.join('\n') : ''}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        rows="3"
+                        maxLength="1000"
+                        placeholder="Enter each con on a new line"
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                      <select 
-                        name="categorySelect" 
-                        value={selectedCategory || editModal.data?.categoryName || ''} 
+                      <select
+                        name="categorySelect"
+                        value={selectedCategory || editModal.data?.categoryName || ''}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        required
                         onChange={(e) => {
                           setSelectedCategory(e.target.value);
                           if (e.target.value === 'other') {
@@ -1142,31 +1280,38 @@ export default function AdminDashboard() {
                       <div id="customCategoryField" className="space-y-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">New Category Name</label>
-                          <input 
-                            name="customCategory" 
+                          <input
+                            name="customCategory"
                             value={customCategory}
                             onChange={(e) => setCustomCategory(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg" 
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                             required
+                            maxLength="100"
+                            pattern="[a-zA-Z0-9\s\-_.,&()@#%]+"
+                            title="Only letters, numbers, spaces and common punctuation allowed"
                           />
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Category Image URL</label>
-                          <input 
-                            name="customCategoryUrl" 
+                          <input
+                            name="customCategoryUrl"
                             value={customCategoryUrl}
                             onChange={(e) => setCustomCategoryUrl(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg" 
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                            pattern="https?://.+"
+                            maxLength="500"
+                            title="Please enter a valid URL starting with http:// or https://"
                           />
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Category Description</label>
-                          <textarea 
-                            name="customCategoryDescription" 
+                          <textarea
+                            name="customCategoryDescription"
                             value={customCategoryDescription}
                             onChange={(e) => setCustomCategoryDescription(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg" 
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                             rows="2"
+                            maxLength="500"
                           />
                         </div>
                       </div>
@@ -1421,23 +1566,75 @@ export default function AdminDashboard() {
               )}
 
               {editModal.type === 'user' && (
-                <form onSubmit={(e) => { e.preventDefault(); handleSaveUser({ username: e.target.username.value, fullName: e.target.fullName.value, email: e.target.email.value, phone: e.target.phone.value, role: e.target.role.value, isActive: e.target.isActive.value === 'true' }); }}>
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const userData = {
+                    username: e.target.username.value,
+                    fullName: e.target.fullName.value,
+                    email: e.target.email.value,
+                    phone: e.target.phone.value,
+                    role: e.target.role.value,
+                    isActive: e.target.isActive.value === 'true'
+                  };
+                  // Only include password if a new one is provided
+                  if (e.target.newPassword.value) {
+                    userData.password = e.target.newPassword.value;
+                  }
+                  handleSaveUser(userData);
+                }}>
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                      <input name="username" defaultValue={editModal.data?.username} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                      <input
+                        name="username"
+                        defaultValue={editModal.data?.username}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        readOnly={!!editModal.data}
+                        {...(!editModal.data ? { required: true } : {})}
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                      <input name="fullName" defaultValue={editModal.data?.fullName} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                      <input name="fullName" defaultValue={editModal.data?.fullName} className="w-full px-3 py-2 border border-gray-300 rounded-lg" required maxLength="100" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                      <input name="email" type="email" defaultValue={editModal.data?.email} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                      <input
+                        name="email"
+                        type="email"
+                        defaultValue={editModal.data?.email}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        readOnly={!!editModal.data}
+                        {...(!editModal.data ? { required: true } : {})}
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                      <input name="phone" defaultValue={editModal.data?.phone} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                      <input name="phone" defaultValue={editModal.data?.phone} className="w-full px-3 py-2 border border-gray-300 rounded-lg" required maxLength="20" pattern="[0-9+\-\s]+" title="Only numbers, +, - and spaces allowed" />
+                    </div>
+                    {editModal.data && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                        <input
+                          type="text"
+                          value="••••••••"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
+                          readOnly
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Current password is masked for security. Enter a new password below to reset.</p>
+                      </div>
+                    )}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">New Password {editModal.data ? '(Leave blank to keep current)' : '(Required)'}</label>
+                      <input
+                        name="newPassword"
+                        type="password"
+                        defaultValue=""
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        {...(!editModal.data ? { required: true, minLength: 6 } : { minLength: 6 })}
+                        maxLength="100"
+                        placeholder={editModal.data ? "Enter new password to reset" : "Create a password"}
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>

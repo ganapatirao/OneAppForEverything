@@ -8,6 +8,8 @@ import Recruitment from './components/Recruitment';
 import Booking from './components/Booking';
 import AdminDashboard from './components/AdminDashboard';
 import Login from './components/Login';
+import Register from './components/Register';
+import PasswordReset from './components/PasswordReset';
 import Cart from './components/Cart';
 import Checkout from './components/Checkout';
 import { shoppingApi, adminApi } from './services/api';
@@ -193,6 +195,8 @@ function App() {
         <Route path="/booking" element={<Booking />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/login" element={<Login onLogin={handleLogin} />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/reset-password" element={<PasswordReset />} />
       </Routes>
 
       {/* Cart Modal */}

@@ -12,6 +12,14 @@ export default function HomePage() {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(price);
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -87,7 +95,7 @@ export default function HomePage() {
                     <Star size={16} className="text-yellow-500 fill-current" />
                     <span className="ml-1 text-sm text-gray-600">{product.rating} ({product.reviewCount})</span>
                   </div>
-                  <p className="text-lg font-bold text-blue-600">${product.price.toFixed(2)}</p>
+                  <p className="text-lg font-bold text-blue-600">{formatPrice(product.price)}</p>
                 </div>
               </div>
             ))}
@@ -114,7 +122,7 @@ export default function HomePage() {
                     <MapPin size={16} className="text-gray-500" />
                     <span className="ml-1 text-sm text-gray-600">{ad.location}</span>
                   </div>
-                  <p className="text-lg font-bold text-green-600">${ad.price.toFixed(2)}</p>
+                  <p className="text-lg font-bold text-green-600">{formatPrice(ad.price)}</p>
                 </div>
               </div>
             ))}
@@ -174,7 +182,7 @@ export default function HomePage() {
                   <ArrowRight size={16} className="text-gray-400" />
                   <span className="text-gray-600">{transport.destination}</span>
                 </div>
-                <p className="text-lg font-bold text-blue-600">${transport.price.toFixed(2)}</p>
+                <p className="text-lg font-bold text-blue-600">{formatPrice(transport.price)}</p>
                 <p className="text-sm text-gray-500 mt-1">{transport.duration}</p>
               </div>
             ))}
@@ -201,7 +209,7 @@ export default function HomePage() {
                     <h3 className="font-semibold text-gray-800 ml-2">{pkg.name}</h3>
                   </div>
                   <p className="text-sm text-gray-600 mb-2">{pkg.duration}</p>
-                  <p className="text-lg font-bold text-purple-600">${pkg.price.toFixed(2)}</p>
+                  <p className="text-lg font-bold text-purple-600">{formatPrice(pkg.price)}</p>
                 </div>
               </div>
             ))}

@@ -118,6 +118,22 @@ namespace BusinessPlatform.API.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateUser(string id, [FromBody] User user)
         {
+            var existingUser = await _context.Users.Find(u => u.Id == id).FirstOrDefaultAsync();
+            if (existingUser == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+
+            // Only update password if a new one is provided
+            if (!string.IsNullOrEmpty(user.Password))
+            {
+                user.Password = HashPassword(user.Password);
+            }
+            else
+            {
+                user.Password = existingUser.Password;
+            }
+
             user.Id = id;
             var result = await _context.Users.ReplaceOneAsync(u => u.Id == id, user);
             if (result.MatchedCount == 0)
@@ -137,6 +153,24 @@ namespace BusinessPlatform.API.Controllers
                 return NotFound(new { message = "User not found" });
             }
             return Ok(new { message = "User deleted successfully" });
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            var user = await _context.Users.Find(u => u.Email == request.Email).FirstOrDefaultAsync();
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+
+            user.Password = HashPassword(request.NewPassword);
+            var result = await _context.Users.ReplaceOneAsync(u => u.Id == user.Id, user);
+            if (result.MatchedCount == 0)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+            return Ok(new { message = "Password reset successfully" });
         }
 
         [HttpGet("dashboard")]
@@ -522,5 +556,11 @@ namespace BusinessPlatform.API.Controllers
         public string Password { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;
+    }
+
+    public class ResetPasswordRequest
+    {
+        public string Email { get; set; } = string.Empty;
+        public string NewPassword { get; set; } = string.Empty;
     }
 }

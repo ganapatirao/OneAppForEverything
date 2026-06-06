@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { User, Lock } from 'lucide-react';
 import { adminApi } from '../services/api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState('');
@@ -87,10 +87,16 @@ export default function Login({ onLogin }) {
         <div className="mt-6 text-center">
           <p className="text-gray-600">
             Don't have an account?{' '}
-            <a href="#" className="text-blue-600 hover:text-blue-700 font-medium">
+            <Link to="/register" className="text-blue-600 hover:text-blue-700 font-medium">
               Register
-            </a>
+            </Link>
           </p>
+        </div>
+
+        <div className="mt-4 text-center">
+          <Link to="/reset-password" className="text-blue-600 hover:text-blue-700 font-medium text-sm">
+            Forgot password?
+          </Link>
         </div>
 
         <div className="mt-8 p-4 bg-gray-50 rounded-lg">

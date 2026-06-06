@@ -107,6 +107,7 @@ export const bookingApi = {
 export const adminApi = {
   login: (data) => api.post('/admin/login', data),
   register: (data) => api.post('/admin/register', data),
+  resetPassword: (data) => api.post('/admin/reset-password', data),
   getUsers: () => api.get('/admin/users'),
   getUser: (id) => api.get(`/admin/users/${id}`),
   updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
