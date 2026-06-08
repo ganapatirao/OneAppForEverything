@@ -51,8 +51,8 @@ namespace BusinessPlatform.API.Controllers
                 return BadRequest(new { message = "Validation failed", errors = ModelState });
             }
 
-            // Additional validation for image URLs
-            if (!string.IsNullOrEmpty(ad.ImageUrl) && !Uri.TryCreate(ad.ImageUrl, UriKind.Absolute, out _))
+            // Additional validation for image URLs - allow data URLs
+            if (!string.IsNullOrEmpty(ad.ImageUrl) && !ad.ImageUrl.StartsWith("data:") && !Uri.TryCreate(ad.ImageUrl, UriKind.Absolute, out _))
             {
                 return BadRequest(new { message = "Invalid image URL format" });
             }
@@ -61,7 +61,7 @@ namespace BusinessPlatform.API.Controllers
             {
                 foreach (var url in ad.ImageUrls)
                 {
-                    if (!string.IsNullOrEmpty(url) && !Uri.TryCreate(url, UriKind.Absolute, out _))
+                    if (!string.IsNullOrEmpty(url) && !url.StartsWith("data:") && !Uri.TryCreate(url, UriKind.Absolute, out _))
                     {
                         return BadRequest(new { message = "Invalid image URL format in additional images" });
                     }
@@ -84,8 +84,8 @@ namespace BusinessPlatform.API.Controllers
                 return BadRequest(new { message = "Validation failed", errors = ModelState });
             }
 
-            // Additional validation for image URLs
-            if (!string.IsNullOrEmpty(ad.ImageUrl) && !Uri.TryCreate(ad.ImageUrl, UriKind.Absolute, out _))
+            // Additional validation for image URLs - allow data URLs
+            if (!string.IsNullOrEmpty(ad.ImageUrl) && !ad.ImageUrl.StartsWith("data:") && !Uri.TryCreate(ad.ImageUrl, UriKind.Absolute, out _))
             {
                 return BadRequest(new { message = "Invalid image URL format" });
             }
@@ -94,7 +94,7 @@ namespace BusinessPlatform.API.Controllers
             {
                 foreach (var url in ad.ImageUrls)
                 {
-                    if (!string.IsNullOrEmpty(url) && !Uri.TryCreate(url, UriKind.Absolute, out _))
+                    if (!string.IsNullOrEmpty(url) && !url.StartsWith("data:") && !Uri.TryCreate(url, UriKind.Absolute, out _))
                     {
                         return BadRequest(new { message = "Invalid image URL format in additional images" });
                     }

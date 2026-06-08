@@ -308,8 +308,8 @@ namespace BusinessPlatform.API.Controllers
                 return BadRequest(new { message = "Validation failed", errors = ModelState });
             }
 
-            // Additional validation for image URLs
-            if (!string.IsNullOrEmpty(ad.ImageUrl) && !Uri.TryCreate(ad.ImageUrl, UriKind.Absolute, out _))
+            // Additional validation for image URLs - allow data URLs
+            if (!string.IsNullOrEmpty(ad.ImageUrl) && !ad.ImageUrl.StartsWith("data:") && !Uri.TryCreate(ad.ImageUrl, UriKind.Absolute, out _))
             {
                 return BadRequest(new { message = "Invalid image URL format" });
             }
@@ -318,7 +318,7 @@ namespace BusinessPlatform.API.Controllers
             {
                 foreach (var url in ad.ImageUrls)
                 {
-                    if (!string.IsNullOrEmpty(url) && !Uri.TryCreate(url, UriKind.Absolute, out _))
+                    if (!string.IsNullOrEmpty(url) && !url.StartsWith("data:") && !Uri.TryCreate(url, UriKind.Absolute, out _))
                     {
                         return BadRequest(new { message = "Invalid image URL format in additional images" });
                     }
@@ -341,8 +341,8 @@ namespace BusinessPlatform.API.Controllers
                 return BadRequest(new { message = "Validation failed", errors = ModelState });
             }
 
-            // Additional validation for image URLs
-            if (!string.IsNullOrEmpty(ad.ImageUrl) && !Uri.TryCreate(ad.ImageUrl, UriKind.Absolute, out _))
+            // Additional validation for image URLs - allow data URLs
+            if (!string.IsNullOrEmpty(ad.ImageUrl) && !ad.ImageUrl.StartsWith("data:") && !Uri.TryCreate(ad.ImageUrl, UriKind.Absolute, out _))
             {
                 return BadRequest(new { message = "Invalid image URL format" });
             }
@@ -351,15 +351,27 @@ namespace BusinessPlatform.API.Controllers
             {
                 foreach (var url in ad.ImageUrls)
                 {
-                    if (!string.IsNullOrEmpty(url) && !Uri.TryCreate(url, UriKind.Absolute, out _))
+                    if (!string.IsNullOrEmpty(url) && !url.StartsWith("data:") && !Uri.TryCreate(url, UriKind.Absolute, out _))
                     {
                         return BadRequest(new { message = "Invalid image URL format in additional images" });
                     }
                 }
             }
 
+            // Get existing ad to preserve imageUrls if not provided
+            var existingAd = await _context.Advertisements.Find(a => a.Id == id).FirstOrDefaultAsync();
+            if (existingAd == null)
+            {
+                return NotFound(new { message = "Advertisement not found" });
+            }
+
             ad.Id = id;
             ad.UpdatedAt = DateTime.UtcNow;
+            // Preserve imageUrls if not provided in update
+            if (ad.ImageUrls == null || ad.ImageUrls.Count == 0)
+            {
+                ad.ImageUrls = existingAd.ImageUrls ?? new List<string>();
+            }
             var result = await _context.Advertisements.ReplaceOneAsync(a => a.Id == id, ad);
             if (result.MatchedCount == 0)
             {

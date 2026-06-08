@@ -22,6 +22,12 @@ export default function AdminDashboard() {
   const [addModal, setAddModal] = useState({ isOpen: false, type: null });
   const [customCategory, setCustomCategory] = useState('');
   const [customCategoryUrl, setCustomCategoryUrl] = useState('');
+  const [productPrimaryPreview, setProductPrimaryPreview] = useState('');
+  const [productAdditionalPreviews, setProductAdditionalPreviews] = useState([]);
+  const [adPrimaryPreview, setAdPrimaryPreview] = useState('');
+  const [adAdditionalPreviews, setAdAdditionalPreviews] = useState([]);
+  const [packagePreview, setPackagePreview] = useState('');
+  const [moviePreview, setMoviePreview] = useState('');
   const [customCategoryDescription, setCustomCategoryDescription] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
 
@@ -48,7 +54,7 @@ export default function AdminDashboard() {
     phone: '',
     email: '',
     imageUrl: '',
-    imageUrls: '',
+    imageUrls: [],
     negotiable: false,
     isFeatured: false,
     isUrgent: false,
@@ -56,6 +62,19 @@ export default function AdminDashboard() {
   });
 
   const [adCategories, setAdCategories] = useState([]);
+
+  const fileToDataUrl = (file) => new Promise((resolve, reject) => {
+    if (!file) {
+      resolve('');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const filesToDataUrls = async (fileList) => Promise.all(Array.from(fileList || []).map(fileToDataUrl));
 
   useEffect(() => {
     const role = localStorage.getItem('role');
@@ -299,7 +318,7 @@ export default function AdminDashboard() {
       phone: ad.sellerPhone || ad.phone || '',
       email: ad.sellerEmail || ad.email || '',
       imageUrl: ad.imageUrl || (ad.imageUrls && ad.imageUrls.length > 0 ? ad.imageUrls[0] : ''),
-      imageUrls: ad.imageUrls && ad.imageUrls.length > 1 ? ad.imageUrls.slice(1).join(', ') : '',
+      imageUrls: ad.imageUrls || [],
       negotiable: ad.negotiable || false,
       isFeatured: ad.isFeatured || false,
       isUrgent: ad.isUrgent || false,
@@ -376,29 +395,19 @@ export default function AdminDashboard() {
       alert('Please enter a valid email address');
       return;
     }
-    if (!adFormData.imageUrl.trim() && !adFormData.imageUrls.trim()) {
-      alert('Please enter at least one image URL');
-      return;
-    }
-    if (adFormData.imageUrl && !/^https?:\/\/.+/.test(adFormData.imageUrl)) {
-      alert('Please enter a valid image URL (must start with http:// or https://)');
-      return;
-    }
-    if (adFormData.imageUrls && adFormData.imageUrls.length > 1000) {
-      alert('Additional image URLs must be less than 1000 characters');
-      return;
-    }
-    if (adFormData.imageUrls) {
-      const urls = adFormData.imageUrls.split(',').map(url => url.trim()).filter(url => url);
-      for (const url of urls) {
-        if (!/^https?:\/\/.+/.test(url)) {
-          alert('Please enter valid image URLs (must start with http:// or https://)');
-          return;
-        }
-      }
-    }
-
     try {
+      const primaryAdImage = await fileToDataUrl(e.currentTarget?.primaryAdImage?.files?.[0]);
+      // Use the state-based additional previews instead of reading from file input again
+      const additionalAdImages = adAdditionalPreviews.length > 0 ? adAdditionalPreviews : await filesToDataUrls(e.currentTarget?.additionalAdImages?.files || []);
+      console.log('Primary image:', primaryAdImage ? 'uploaded' : 'none');
+      console.log('Additional images count:', additionalAdImages.length);
+      console.log('Additional images:', additionalAdImages);
+      console.log('adAdditionalPreviews state:', adAdditionalPreviews);
+      if (!primaryAdImage && !adFormData.imageUrl && additionalAdImages.length === 0 && (!Array.isArray(adFormData.imageUrls) || adFormData.imageUrls.length === 0)) {
+        alert('Please select at least one image');
+        return;
+      }
+
       // If it's a new category, create it first
       if (adFormData.categoryName === 'Other' && adFormData.customCategory.trim()) {
         await adminApi.createAdCategory({
@@ -414,9 +423,10 @@ export default function AdminDashboard() {
         ...adFormData,
         price: parseFloat(adFormData.price),
         categoryName: adFormData.categoryName === 'Other' ? adFormData.customCategory : adFormData.categoryName,
-        imageUrls: adFormData.imageUrls
-          ? [adFormData.imageUrl, ...adFormData.imageUrls.split(',').map(url => url.trim())].filter(url => url)
-          : [adFormData.imageUrl],
+        imageUrl: primaryAdImage || adFormData.imageUrl || (additionalAdImages.length > 0 ? additionalAdImages[0] : ''),
+        imageUrls: additionalAdImages.length > 0
+          ? additionalAdImages
+          : (primaryAdImage ? [primaryAdImage] : (editModal.data?.id ? (Array.isArray(adFormData.imageUrls) ? adFormData.imageUrls : []) : [])),
         sellerId: editModal.data?.sellerId || 'admin',
         sellerName: editModal.data?.sellerName || 'Admin',
         sellerEmail: adFormData.email,
@@ -425,6 +435,9 @@ export default function AdminDashboard() {
         views: editModal.data?.views || 0,
         postedDate: editModal.data?.postedDate || new Date().toISOString()
       };
+      console.log('Final adData imageUrls:', adData.imageUrls);
+      console.log('Final adData imageUrl:', adData.imageUrl);
+      console.log('Sending adData to backend:', JSON.stringify({ imageUrl: adData.imageUrl, imageUrlsCount: adData.imageUrls?.length }, null, 2));
 
       if (editModal.data?.id) {
         await adminApi.updateAd(editModal.data.id, adData);
@@ -447,16 +460,19 @@ export default function AdminDashboard() {
         phone: '',
         email: '',
         imageUrl: '',
-        imageUrls: '',
+        imageUrls: [],
         negotiable: false,
         isFeatured: false,
         isUrgent: false,
         status: 'Active'
       });
+      setAdPrimaryPreview('');
+      setAdAdditionalPreviews([]);
       loadAds();
     } catch (error) {
       console.error('Error saving ad:', error);
-      alert('Error saving ad. Please try again.');
+      console.error('Error response:', error.response?.data);
+      alert(`Error saving ad: ${error.response?.data?.message || error.message || 'Please try again.'}`);
     }
   };
 
@@ -773,7 +789,11 @@ export default function AdminDashboard() {
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-gray-800">Products ({products.length})</h2>
               <button
-                onClick={() => setEditModal({ isOpen: true, type: 'product', data: null })}
+                onClick={() => {
+                  setProductPrimaryPreview('');
+                  setProductAdditionalPreviews([]);
+                  setEditModal({ isOpen: true, type: 'product', data: null });
+                }}
                 className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
               >
                 <Plus size={16} />
@@ -894,12 +914,14 @@ export default function AdminDashboard() {
                     phone: '',
                     email: '',
                     imageUrl: '',
-                    imageUrls: '',
+                    imageUrls: [],
                     negotiable: false,
                     isFeatured: false,
                     isUrgent: false,
                     status: 'Active'
                   });
+                  setAdPrimaryPreview('');
+                  setAdAdditionalPreviews([]);
                   setEditModal({ isOpen: true, type: 'ad', data: null });
                 }}
                 className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
@@ -1221,7 +1243,10 @@ export default function AdminDashboard() {
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-gray-800">Travel Packages ({packages.length})</h2>
               <button
-                onClick={() => setEditModal({ isOpen: true, type: 'package', data: null })}
+                onClick={() => {
+                  setPackagePreview('');
+                  setEditModal({ isOpen: true, type: 'package', data: null });
+                }}
                 className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
               >
                 <Plus size={16} />
@@ -1289,7 +1314,10 @@ export default function AdminDashboard() {
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-gray-800">Movies ({movies.length})</h2>
               <button
-                onClick={() => setEditModal({ isOpen: true, type: 'movie', data: null })}
+                onClick={() => {
+                  setMoviePreview('');
+                  setEditModal({ isOpen: true, type: 'movie', data: null });
+                }}
                 className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
               >
                 <Plus size={16} />
@@ -1517,15 +1545,20 @@ export default function AdminDashboard() {
               </div>
 
               {editModal.type === 'product' && (
-                <form onSubmit={(e) => {
+                <form onSubmit={async (e) => {
                   e.preventDefault();
                   const categoryName = selectedCategory === 'other'
                     ? customCategory
                     : selectedCategory;
-                  const imageUrlsValue = e.target.imageUrls.value;
-                  const imageUrlsArray = imageUrlsValue
-                    ? imageUrlsValue.split('\n').map(url => url.trim()).filter(url => url)
-                    : [];
+                  const primaryImage = await fileToDataUrl(e.target.imageUrl.files?.[0]);
+                  const uploadedImageUrls = await filesToDataUrls(e.target.imageUrls.files);
+                  const imageUrlsArray = uploadedImageUrls.length > 0
+                    ? uploadedImageUrls
+                    : (editModal.data?.imageUrls || []);
+                  const categoryImage = await fileToDataUrl(e.target.customCategoryImage?.files?.[0]);
+                  if (selectedCategory === 'other' && categoryImage) {
+                    setCustomCategoryUrl(categoryImage);
+                  }
                   const prosValue = e.target.pros.value;
                   const prosArray = prosValue
                     ? prosValue.split('\n').map(p => p.trim()).filter(p => p)
@@ -1540,7 +1573,7 @@ export default function AdminDashboard() {
                     price: parseFloat(e.target.price.value),
                     stock: parseInt(e.target.stock.value),
                     seller: e.target.seller.value,
-                    imageUrl: e.target.imageUrl.value,
+                    imageUrl: primaryImage || editModal.data?.imageUrl || '',
                     imageUrls: imageUrlsArray,
                     rating: parseFloat(e.target.rating.value) || 0,
                     pros: prosArray,
@@ -1550,6 +1583,8 @@ export default function AdminDashboard() {
                   });
                   setCustomCategory('');
                   setSelectedCategory('');
+                  setProductPrimaryPreview('');
+                  setProductAdditionalPreviews([]);
                 }}>
                   <div className="space-y-4">
                     <div>
@@ -1575,19 +1610,48 @@ export default function AdminDashboard() {
                       <input name="seller" defaultValue={editModal.data?.seller} className="w-full px-3 py-2 border border-gray-300 rounded-lg" maxLength="100" pattern="[a-zA-Z0-9\s\-_.,&()@#%]+" title="Only letters, numbers, spaces and common punctuation allowed" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Primary Image URL</label>
-                      <input name="imageUrl" defaultValue={editModal.data?.imageUrl} className="w-full px-3 py-2 border border-gray-300 rounded-lg" pattern="https?://.+" maxLength="500" title="Please enter a valid URL starting with http:// or https://" />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Primary Image</label>
+                      <input 
+                        name="imageUrl" 
+                        type="file" 
+                        accept="image/*" 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const preview = await fileToDataUrl(file);
+                            setProductPrimaryPreview(preview);
+                          }
+                        }}
+                      />
+                      {(productPrimaryPreview || editModal.data?.imageUrl) && (
+                        <img src={productPrimaryPreview || editModal.data?.imageUrl} alt="Preview" className="mt-2 h-32 w-32 rounded object-cover border" />
+                      )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Additional Image URLs (one per line)</label>
-                      <textarea
-                        name="imageUrls"
-                        defaultValue={editModal.data?.imageUrls ? editModal.data.imageUrls.join('\n') : ''}
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Additional Images</label>
+                      <input 
+                        name="imageUrls" 
+                        type="file" 
+                        accept="image/*" 
+                        multiple 
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                        rows="3"
-                        maxLength="5000"
-                        placeholder="Enter each image URL on a new line"
+                        onChange={async (e) => {
+                          const files = e.target.files;
+                          if (files && files.length > 0) {
+                            const previews = await filesToDataUrls(files);
+                            setProductAdditionalPreviews(previews);
+                          }
+                        }}
                       />
+                      <div className="mt-2 flex gap-2 flex-wrap">
+                        {productAdditionalPreviews.length > 0 && productAdditionalPreviews.map((url, index) => (
+                          <img key={`new-${index}`} src={url} alt={`New ${index + 1}`} className="h-20 w-20 rounded object-cover border" />
+                        ))}
+                        {editModal.data?.imageUrls?.length > 0 && editModal.data.imageUrls.map((url, index) => (
+                          <img key={`existing-${index}`} src={url} alt={`Existing ${index + 1}`} className="h-20 w-20 rounded object-cover border" />
+                        ))}
+                      </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -1654,16 +1718,15 @@ export default function AdminDashboard() {
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Category Image URL</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Category Image</label>
                           <input
-                            name="customCategoryUrl"
-                            value={customCategoryUrl}
-                            onChange={(e) => setCustomCategoryUrl(e.target.value)}
+                            name="customCategoryImage"
+                            type="file"
+                            accept="image/*"
+                            onChange={async (e) => setCustomCategoryUrl(await fileToDataUrl(e.target.files?.[0]))}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                            pattern="https?://.+"
-                            maxLength="500"
-                            title="Please enter a valid URL starting with http:// or https://"
                           />
+                          {customCategoryUrl && <img src={customCategoryUrl} alt="Category preview" className="mt-2 h-20 w-20 rounded object-cover" />}
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Category Description</label>
@@ -1852,27 +1915,48 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Primary Image URL *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Primary Image *</label>
                     <input
-                      type="url"
-                      value={adFormData.imageUrl}
-                      onChange={(e) => setAdFormData({ ...adFormData, imageUrl: e.target.value })}
+                      name="primaryAdImage"
+                      type="file"
+                      accept="image/*"
                       className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                      placeholder="https://example.com/image.jpg"
-                      required
-                      pattern="https?://.+"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const preview = await fileToDataUrl(file);
+                          setAdPrimaryPreview(preview);
+                        }
+                      }}
                     />
+                    {(adPrimaryPreview || adFormData.imageUrl) && (
+                      <img src={adPrimaryPreview || adFormData.imageUrl} alt="Preview" className="mt-2 h-32 w-32 rounded object-cover border" />
+                    )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Additional Image URLs (comma separated)</label>
-                    <textarea
-                      value={adFormData.imageUrls}
-                      onChange={(e) => setAdFormData({ ...adFormData, imageUrls: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
-                      rows="2"
-                      placeholder="https://example.com/image2.jpg, https://example.com/image3.jpg"
-                      maxLength="1000"
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Additional Images</label>
+                    <input
+                      name="additionalAdImages"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      onChange={async (e) => {
+                        const files = e.target.files;
+                        if (files && files.length > 0) {
+                          const previews = await filesToDataUrls(files);
+                          setAdAdditionalPreviews(previews);
+                        }
+                      }}
                     />
+                    <div className="mt-2 flex gap-2 flex-wrap">
+                      {adAdditionalPreviews.length > 0 && adAdditionalPreviews.map((url, index) => (
+                        <img key={`new-${index}`} src={url} alt={`New ${index + 1}`} className="h-20 w-20 rounded object-cover border" />
+                      ))}
+                      {Array.isArray(adFormData.imageUrls) && adFormData.imageUrls.length > 0 && adFormData.imageUrls.map((url, index) => (
+                        <img key={`existing-${index}`} src={url} alt={`Existing ${index + 1}`} className="h-20 w-20 rounded object-cover border" />
+                      ))}
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <label className="flex items-center cursor-pointer bg-white px-4 py-3 border border-gray-200 rounded-xl">
@@ -1939,12 +2023,14 @@ export default function AdminDashboard() {
                           phone: '',
                           email: '',
                           imageUrl: '',
-                          imageUrls: '',
+                          imageUrls: [],
                           negotiable: false,
                           isFeatured: false,
                           isUrgent: false,
                           status: 'Active'
                         });
+                        setAdPrimaryPreview('');
+                        setAdAdditionalPreviews([]);
                       }}
                       className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-all"
                     >
@@ -2051,7 +2137,20 @@ export default function AdminDashboard() {
               )}
 
               {editModal.type === 'package' && (
-                <form onSubmit={(e) => { e.preventDefault(); handleSavePackage({ name: e.target.name.value, description: e.target.description.value, duration: e.target.duration.value, price: parseFloat(e.target.price.value), destinations: e.target.destinations.value.split(',').map(d => d.trim()), imageUrl: e.target.imageUrl.value, status: e.target.status.value }); }}>
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  const packageImage = await fileToDataUrl(e.target.imageUrl.files?.[0]);
+                  handleSavePackage({
+                    name: e.target.name.value,
+                    description: e.target.description.value,
+                    duration: e.target.duration.value,
+                    price: parseFloat(e.target.price.value),
+                    destinations: e.target.destinations.value.split(',').map(d => d.trim()),
+                    imageUrl: packageImage || editModal.data?.imageUrl || '',
+                    status: e.target.status.value
+                  });
+                  setPackagePreview('');
+                }}>
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
@@ -2076,8 +2175,23 @@ export default function AdminDashboard() {
                       <input name="destinations" defaultValue={editModal.data?.destinations?.join(', ')} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
-                      <input name="imageUrl" defaultValue={editModal.data?.imageUrl} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                      <input 
+                        name="imageUrl" 
+                        type="file" 
+                        accept="image/*" 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const preview = await fileToDataUrl(file);
+                            setPackagePreview(preview);
+                          }
+                        }}
+                      />
+                      {(packagePreview || editModal.data?.imageUrl) && (
+                        <img src={packagePreview || editModal.data?.imageUrl} alt="Preview" className="mt-2 h-32 w-32 rounded object-cover border" />
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
@@ -2094,7 +2208,20 @@ export default function AdminDashboard() {
               )}
 
               {editModal.type === 'movie' && (
-                <form onSubmit={(e) => { e.preventDefault(); handleSaveMovie({ title: e.target.title.value, genre: e.target.genre.value, language: e.target.language.value, duration: parseInt(e.target.duration.value), rating: parseFloat(e.target.rating.value), imageUrl: e.target.imageUrl.value, status: e.target.status.value }); }}>
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  const movieImage = await fileToDataUrl(e.target.imageUrl.files?.[0]);
+                  handleSaveMovie({
+                    title: e.target.title.value,
+                    genre: e.target.genre.value,
+                    language: e.target.language.value,
+                    duration: parseInt(e.target.duration.value),
+                    rating: parseFloat(e.target.rating.value),
+                    imageUrl: movieImage || editModal.data?.imageUrl || '',
+                    status: e.target.status.value
+                  });
+                  setMoviePreview('');
+                }}>
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
@@ -2121,8 +2248,23 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
-                      <input name="imageUrl" defaultValue={editModal.data?.imageUrl} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                      <input 
+                        name="imageUrl" 
+                        type="file" 
+                        accept="image/*" 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const preview = await fileToDataUrl(file);
+                            setMoviePreview(preview);
+                          }
+                        }}
+                      />
+                      {(moviePreview || editModal.data?.imageUrl) && (
+                        <img src={moviePreview || editModal.data?.imageUrl} alt="Preview" className="mt-2 h-32 w-32 rounded object-cover border" />
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>

@@ -46,6 +46,14 @@ namespace BusinessPlatform.API
 
         }
 
+        private string GenerateSvgDataUrl(string color, string text = "")
+        {
+            var svg = $"<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'><rect width='400' height='300' fill='{color}'/><text x='200' y='150' font-family='Arial' font-size='24' fill='white' text-anchor='middle'>{text}</text></svg>";
+            var bytes = Encoding.UTF8.GetBytes(svg);
+            var base64 = Convert.ToBase64String(bytes);
+            return $"data:image/svg+xml;base64,{base64}";
+        }
+
 
 
         public async Task SeedAsync()
@@ -220,15 +228,15 @@ namespace BusinessPlatform.API
 
             {
 
-                new Category { Name = "Electronics", Description = "Electronic devices and gadgets", ImageUrl = "https://images.unsplash.com/photo-1498049794561-7780e7231661?w=400&h=300&fit=crop" },
+                new Category { Name = "Electronics", Description = "Electronic devices and gadgets", ImageUrl = GenerateSvgDataUrl("#3B82F6", "Electronics") },
 
-                new Category { Name = "Clothing", Description = "Fashion and apparel", ImageUrl = "https://images.unsplash.com/photo-1445205170230-053b83016050?w=400&h=300&fit=crop" },
+                new Category { Name = "Clothing", Description = "Fashion and apparel", ImageUrl = GenerateSvgDataUrl("#EC4899", "Clothing") },
 
-                new Category { Name = "Books", Description = "Books and educational materials", ImageUrl = "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&h=300&fit=crop" },
+                new Category { Name = "Books", Description = "Books and educational materials", ImageUrl = GenerateSvgDataUrl("#8B5CF6", "Books") },
 
-                new Category { Name = "Home & Kitchen", Description = "Home appliances and kitchen items", ImageUrl = "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop" },
+                new Category { Name = "Home & Kitchen", Description = "Home appliances and kitchen items", ImageUrl = GenerateSvgDataUrl("#F59E0B", "Home & Kitchen") },
 
-                new Category { Name = "Sports", Description = "Sports equipment and accessories", ImageUrl = "https://images.unsplash.com/photo-1461896836934-voices-of-sports?w=400&h=300&fit=crop" }
+                new Category { Name = "Sports", Description = "Sports equipment and accessories", ImageUrl = GenerateSvgDataUrl("#10B981", "Sports") }
 
             };
 
@@ -258,11 +266,11 @@ namespace BusinessPlatform.API
 
                     Rating = 4.5,
 
-                    ImageUrl = "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&h=400&fit=crop",
+                    ImageUrl = GenerateSvgDataUrl("#3B82F6", "Headphones"),
                     ImageUrls = new List<string> {
-                        "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1484704849700-f032a568e944?w=600&h=400&fit=crop"
+                        GenerateSvgDataUrl("#3B82F6", "Headphones 1"),
+                        GenerateSvgDataUrl("#60A5FA", "Headphones 2"),
+                        GenerateSvgDataUrl("#93C5FD", "Headphones 3")
                     },
                     Pros = new List<string> { "30-hour battery life", "Active noise cancellation", "Comfortable over-ear design", "Bluetooth 5.0 connectivity", "Foldable for easy storage" },
 
@@ -291,11 +299,11 @@ namespace BusinessPlatform.API
 
                     Rating = 4.8,
 
-                    ImageUrl = "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&h=400&fit=crop",
+                    ImageUrl = GenerateSvgDataUrl("#10B981", "Smart Watch"),
                     ImageUrls = new List<string> {
-                        "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&h=400&fit=crop"
+                        GenerateSvgDataUrl("#10B981", "Smart Watch 1"),
+                        GenerateSvgDataUrl("#34D399", "Smart Watch 2"),
+                        GenerateSvgDataUrl("#6EE7B7", "Smart Watch 3")
                     },
                     Pros = new List<string> { "7-day battery life", "Water-resistant to 50m", "Built-in GPS", "Health monitoring features", "Always-on display" },
 
@@ -324,11 +332,11 @@ namespace BusinessPlatform.API
 
                     Rating = 4.2,
 
-                    ImageUrl = "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&h=400&fit=crop",
+                    ImageUrl = GenerateSvgDataUrl("#EC4899", "T-Shirt"),
                     ImageUrls = new List<string> {
-                        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?w=600&h=400&fit=crop"
+                        GenerateSvgDataUrl("#EC4899", "T-Shirt 1"),
+                        GenerateSvgDataUrl("#F472B6", "T-Shirt 2"),
+                        GenerateSvgDataUrl("#FBCFE8", "T-Shirt 3")
                     },
                     Pros = new List<string> { "100% organic cotton", "Pre-shrunk", "Breathable fabric", "Multiple colors available", "Durable stitching" },
 
@@ -357,11 +365,11 @@ namespace BusinessPlatform.API
 
                     Rating = 4.6,
 
-                    ImageUrl = "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&h=400&fit=crop",
+                    ImageUrl = GenerateSvgDataUrl("#10B981", "Running Shoes"),
                     ImageUrls = new List<string> {
-                        "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=600&h=400&fit=crop"
+                        GenerateSvgDataUrl("#10B981", "Running Shoes 1"),
+                        GenerateSvgDataUrl("#34D399", "Running Shoes 2"),
+                        GenerateSvgDataUrl("#6EE7B7", "Running Shoes 3")
                     },
                     Pros = new List<string> { "Advanced cushioning", "Lightweight design", "Excellent traction", "Breathable mesh upper", "Energy return technology" },
 
@@ -390,11 +398,11 @@ namespace BusinessPlatform.API
 
                     Rating = 4.7,
 
-                    ImageUrl = "https://images.unsplash.com/photo-1532012197267-da84d127e765?w=600&h=400&fit=crop",
+                    ImageUrl = GenerateSvgDataUrl("#8B5CF6", "C# Book"),
                     ImageUrls = new List<string> {
-                        "https://images.unsplash.com/photo-1532012197267-da84d127e765?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=600&h=400&fit=crop"
+                        GenerateSvgDataUrl("#8B5CF6", "C# Book 1"),
+                        GenerateSvgDataUrl("#A78BFA", "C# Book 2"),
+                        GenerateSvgDataUrl("#C4B5FD", "C# Book 3")
                     },
                     Pros = new List<string> { "Comprehensive coverage", "Real-world examples", "Best practices included", "Suitable for all levels", "Industry-standard patterns" },
 
@@ -423,11 +431,11 @@ namespace BusinessPlatform.API
 
                     Rating = 4.4,
 
-                    ImageUrl = "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=600&h=400&fit=crop",
+                    ImageUrl = GenerateSvgDataUrl("#3B82F6", "Smart TV"),
                     ImageUrls = new List<string> {
-                        "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1593784991095-a205069470b6?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1461151304267-38535e780c79?w=600&h=400&fit=crop"
+                        GenerateSvgDataUrl("#3B82F6", "Smart TV 1"),
+                        GenerateSvgDataUrl("#60A5FA", "Smart TV 2"),
+                        GenerateSvgDataUrl("#93C5FD", "Smart TV 3")
                     },
                     Pros = new List<string> { "4K Ultra HD resolution", "Dolby Vision HDR", "Built-in streaming apps", "Voice control", "Multiple HDMI ports" },
 
@@ -456,11 +464,11 @@ namespace BusinessPlatform.API
 
                     Rating = 4.3,
 
-                    ImageUrl = "https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?w=600&h=400&fit=crop",
+                    ImageUrl = GenerateSvgDataUrl("#F59E0B", "Coffee Maker"),
                     ImageUrls = new List<string> {
-                        "https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600&h=400&fit=crop"
+                        GenerateSvgDataUrl("#F59E0B", "Coffee Maker 1"),
+                        GenerateSvgDataUrl("#FBBF24", "Coffee Maker 2"),
+                        GenerateSvgDataUrl("#FCD34D", "Coffee Maker 3")
                     },
                     Pros = new List<string> { "Built-in grinder", "Thermal carafe", "Programmable timer", "Easy to clean", "Consistent brewing" },
 
@@ -489,11 +497,11 @@ namespace BusinessPlatform.API
 
                     Rating = 4.5,
 
-                    ImageUrl = "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=600&h=400&fit=crop",
+                    ImageUrl = GenerateSvgDataUrl("#10B981", "Yoga Mat"),
                     ImageUrls = new List<string> {
-                        "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1544367563-12123d8965cd?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?w=600&h=400&fit=crop"
+                        GenerateSvgDataUrl("#10B981", "Yoga Mat 1"),
+                        GenerateSvgDataUrl("#34D399", "Yoga Mat 2"),
+                        GenerateSvgDataUrl("#6EE7B7", "Yoga Mat 3")
                     },
                     Pros = new List<string> { "Extra-thick padding", "Non-slip surface", "Eco-friendly materials", "Includes carrying strap", "Joint protection" },
 
@@ -574,12 +582,12 @@ namespace BusinessPlatform.API
                     SellerPhone = "+1-555-0101",
                     PhoneDisplayStatus = "Visible",
                     SellerEmail = "john@example.com",
-                    ImageUrl = "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=600&h=400&fit=crop",
+                    ImageUrl = GenerateSvgDataUrl("#3B82F6", "iPhone"),
                     ImageUrls = new List<string> {
-                        "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=600&h=400&fit=crop"
+                        GenerateSvgDataUrl("#3B82F6", "iPhone 1"),
+                        GenerateSvgDataUrl("#60A5FA", "iPhone 2"),
+                        GenerateSvgDataUrl("#93C5FD", "iPhone 3"),
+                        GenerateSvgDataUrl("#BFDBFE", "iPhone 4")
                     },
                     Negotiable = true,
                     IsFeatured = true,
@@ -602,12 +610,12 @@ namespace BusinessPlatform.API
                     SellerPhone = "+1-555-0102",
                     PhoneDisplayStatus = "Hidden",
                     SellerEmail = "jane@example.com",
-                    ImageUrl = "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=600&h=400&fit=crop",
+                    ImageUrl = GenerateSvgDataUrl("#EF4444", "Car"),
                     ImageUrls = new List<string> {
-                        "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=600&h=400&fit=crop"
+                        GenerateSvgDataUrl("#EF4444", "Car 1"),
+                        GenerateSvgDataUrl("#F87171", "Car 2"),
+                        GenerateSvgDataUrl("#FCA5A5", "Car 3"),
+                        GenerateSvgDataUrl("#FECACA", "Car 4")
                     },
                     Negotiable = true,
                     IsFeatured = false,
@@ -630,12 +638,12 @@ namespace BusinessPlatform.API
                     SellerPhone = "+1-555-0103",
                     PhoneDisplayStatus = "Visible",
                     SellerEmail = "bob@example.com",
-                    ImageUrl = "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&h=400&fit=crop",
+                    ImageUrl = GenerateSvgDataUrl("#F59E0B", "House"),
                     ImageUrls = new List<string> {
-                        "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1550226891-ef816aed4a98?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&h=400&fit=crop"
+                        GenerateSvgDataUrl("#F59E0B", "House 1"),
+                        GenerateSvgDataUrl("#FBBF24", "House 2"),
+                        GenerateSvgDataUrl("#FCD34D", "House 3"),
+                        GenerateSvgDataUrl("#FDE68A", "House 4")
                     },
                     Negotiable = false,
                     IsFeatured = false,
@@ -658,12 +666,12 @@ namespace BusinessPlatform.API
                     SellerPhone = "+1-555-0104",
                     PhoneDisplayStatus = "Hidden",
                     SellerEmail = "alice@example.com",
-                    ImageUrl = "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&h=400&fit=crop",
+                    ImageUrl = GenerateSvgDataUrl("#8B5CF6", "Sofa"),
                     ImageUrls = new List<string> {
-                        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=600&h=400&fit=crop"
+                        GenerateSvgDataUrl("#8B5CF6", "Sofa 1"),
+                        GenerateSvgDataUrl("#A78BFA", "Sofa 2"),
+                        GenerateSvgDataUrl("#C4B5FD", "Sofa 3"),
+                        GenerateSvgDataUrl("#DDD6FE", "Sofa 4")
                     },
                     Negotiable = true,
                     IsFeatured = true,
@@ -686,12 +694,12 @@ namespace BusinessPlatform.API
                     SellerPhone = "+1-555-0101",
                     PhoneDisplayStatus = "Visible",
                     SellerEmail = "john@example.com",
-                    ImageUrl = "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&h=400&fit=crop",
+                    ImageUrl = GenerateSvgDataUrl("#06B6D4", "Desk"),
                     ImageUrls = new List<string> {
-                        "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=600&h=400&fit=crop"
+                        GenerateSvgDataUrl("#06B6D4", "Desk 1"),
+                        GenerateSvgDataUrl("#22D3EE", "Desk 2"),
+                        GenerateSvgDataUrl("#67E8F9", "Desk 3"),
+                        GenerateSvgDataUrl("#A5F3FC", "Desk 4")
                     },
                     Negotiable = true,
                     IsFeatured = false,
@@ -714,12 +722,12 @@ namespace BusinessPlatform.API
                     SellerPhone = "+1-555-0102",
                     PhoneDisplayStatus = "Hidden",
                     SellerEmail = "jane@example.com",
-                    ImageUrl = "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600&h=400&fit=crop",
+                    ImageUrl = GenerateSvgDataUrl("#EC4899", "Laptop"),
                     ImageUrls = new List<string> {
-                        "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1558981852-426c6c22a060?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1609630875171-b1321377ee65?w=600&h=400&fit=crop"
+                        GenerateSvgDataUrl("#EC4899", "Laptop 1"),
+                        GenerateSvgDataUrl("#F472B6", "Laptop 2"),
+                        GenerateSvgDataUrl("#FBCFE8", "Laptop 3"),
+                        GenerateSvgDataUrl("#FCE7F3", "Laptop 4")
                     },
                     Negotiable = true,
                     IsFeatured = true,
@@ -742,12 +750,12 @@ namespace BusinessPlatform.API
                     SellerPhone = "+1-555-0103",
                     PhoneDisplayStatus = "Visible",
                     SellerEmail = "bob@example.com",
-                    ImageUrl = "https://images.unsplash.com/photo-1617806118233-18e1de247200?w=600&h=400&fit=crop",
+                    ImageUrl = GenerateSvgDataUrl("#6366F1", "Chair"),
                     ImageUrls = new List<string> {
-                        "https://images.unsplash.com/photo-1617806118233-18e1de247200?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1618220179428-22790b461013?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1615529182904-14819c35db37?w=600&h=400&fit=crop"
+                        GenerateSvgDataUrl("#6366F1", "Chair 1"),
+                        GenerateSvgDataUrl("#818CF8", "Chair 2"),
+                        GenerateSvgDataUrl("#A5B4FC", "Chair 3"),
+                        GenerateSvgDataUrl("#C7D2FE", "Chair 4")
                     },
                     Negotiable = true,
                     IsFeatured = false,
@@ -770,12 +778,12 @@ namespace BusinessPlatform.API
                     SellerPhone = "+1-555-0104",
                     PhoneDisplayStatus = "Hidden",
                     SellerEmail = "alice@example.com",
-                    ImageUrl = "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=600&h=400&fit=crop",
+                    ImageUrl = GenerateSvgDataUrl("#14B8A6", "Table"),
                     ImageUrls = new List<string> {
-                        "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=600&h=400&fit=crop",
-                        "https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=600&h=400&fit=crop"
+                        GenerateSvgDataUrl("#14B8A6", "Table 1"),
+                        GenerateSvgDataUrl("#2DD4BF", "Table 2"),
+                        GenerateSvgDataUrl("#5EEAD4", "Table 3"),
+                        GenerateSvgDataUrl("#99F6E4", "Table 4")
                     },
                     Negotiable = false,
                     IsFeatured = true,
@@ -909,11 +917,11 @@ namespace BusinessPlatform.API
 
             {
 
-                new TravelPackage { Name = "European Adventure", Description = "Experience the best of Europe with visits to Paris, Rome, and Barcelona.", Duration = "10 days", Price = 2999.99m, Destinations = new List<string> { "Paris", "Rome", "Barcelona" }, ImageUrl = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&h=400&fit=crop" },
+                new TravelPackage { Name = "European Adventure", Description = "Experience the best of Europe with visits to Paris, Rome, and Barcelona.", Duration = "10 days", Price = 2999.99m, Destinations = new List<string> { "Paris", "Rome", "Barcelona" }, ImageUrl = GenerateSvgDataUrl("#3B82F6", "Europe") },
 
-                new TravelPackage { Name = "Tropical Paradise Getaway", Description = "Relax in the beautiful Maldives with pristine beaches and luxury resorts.", Duration = "7 days", Price = 4499.99m, Destinations = new List<string> { "Maldives" }, ImageUrl = "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=600&h=400&fit=crop" },
+                new TravelPackage { Name = "Tropical Paradise Getaway", Description = "Relax in the beautiful Maldives with pristine beaches and luxury resorts.", Duration = "7 days", Price = 4499.99m, Destinations = new List<string> { "Maldives" }, ImageUrl = GenerateSvgDataUrl("#06B6D4", "Maldives") },
 
-                new TravelPackage { Name = "Asian Cultural Experience", Description = "Discover the rich culture of Japan with visits to Tokyo, Kyoto, and Osaka.", Duration = "14 days", Price = 3499.99m, Destinations = new List<string> { "Tokyo", "Kyoto", "Osaka" }, ImageUrl = "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=600&h=400&fit=crop" }
+                new TravelPackage { Name = "Asian Cultural Experience", Description = "Discover the rich culture of Japan with visits to Tokyo, Kyoto, and Osaka.", Duration = "14 days", Price = 3499.99m, Destinations = new List<string> { "Tokyo", "Kyoto", "Osaka" }, ImageUrl = GenerateSvgDataUrl("#EF4444", "Japan") }
 
             };
 
@@ -927,13 +935,13 @@ namespace BusinessPlatform.API
 
             {
 
-                new Movie { Title = "The Quantum Paradox", Genre = "Sci-Fi", Language = "English", Duration = 148, Rating = 8.5, ImageUrl = "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=600&h=400&fit=crop" },
+                new Movie { Title = "The Quantum Paradox", Genre = "Sci-Fi", Language = "English", Duration = 148, Rating = 8.5, ImageUrl = GenerateSvgDataUrl("#8B5CF6", "Sci-Fi") },
 
-                new Movie { Title = "Midnight in Paris", Genre = "Romance", Language = "French", Duration = 124, Rating = 7.8, ImageUrl = "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600&h=400&fit=crop" },
+                new Movie { Title = "Midnight in Paris", Genre = "Romance", Language = "French", Duration = 124, Rating = 7.8, ImageUrl = GenerateSvgDataUrl("#EC4899", "Romance") },
 
-                new Movie { Title = "The Last Samurai Returns", Genre = "Action", Language = "Japanese", Duration = 156, Rating = 9.1, ImageUrl = "https://images.unsplash.com/photo-1535016120720-40c646be5580?w=600&h=400&fit=crop" },
+                new Movie { Title = "The Last Samurai Returns", Genre = "Action", Language = "Japanese", Duration = 156, Rating = 9.1, ImageUrl = GenerateSvgDataUrl("#EF4444", "Action") },
 
-                new Movie { Title = "Comedy Night", Genre = "Comedy", Language = "English", Duration = 112, Rating = 7.2, ImageUrl = "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=600&h=400&fit=crop" }
+                new Movie { Title = "Comedy Night", Genre = "Comedy", Language = "English", Duration = 112, Rating = 7.2, ImageUrl = GenerateSvgDataUrl("#F59E0B", "Comedy") }
 
             };
 

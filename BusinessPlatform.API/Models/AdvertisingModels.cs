@@ -103,7 +103,6 @@ namespace BusinessPlatform.API.Models
 
         [BsonElement("imageUrl")]
         [Required(ErrorMessage = "Image URL is required")]
-        [Url(ErrorMessage = "Invalid image URL format")]
         public string ImageUrl { get; set; } = string.Empty;
 
         [BsonElement("imageUrls")]
