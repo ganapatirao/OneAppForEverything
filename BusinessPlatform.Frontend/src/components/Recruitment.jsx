@@ -35,6 +35,16 @@ export default function Recruitment() {
     expectedSalary: '',
     noticePeriod: ''
   });
+  const [resumePreview, setResumePreview] = useState('');
+
+  const fileToDataUrl = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
 
   const indianLocations = [
     'All', 'Bangalore', 'Mumbai', 'Delhi NCR', 'Hyderabad', 'Chennai', 'Pune', 
@@ -111,12 +121,20 @@ export default function Recruitment() {
     try {
       const userId = localStorage.getItem('userId');
       const userName = localStorage.getItem('userName');
+      const resumeFile = e.target.resumeFile?.files?.[0];
+      let resumeData = application.resume;
+      
+      if (resumeFile) {
+        resumeData = await fileToDataUrl(resumeFile);
+      }
+      
       await recruitmentApi.createApplication({
         jobId: selectedJob.id,
         jobTitle: selectedJob.title,
         applicantId: userId,
         applicantName: userName || 'Anonymous',
-        ...application
+        ...application,
+        resume: resumeData
       });
       loadApplications();
       setApplication({
@@ -127,10 +145,12 @@ export default function Recruitment() {
         expectedSalary: '',
         noticePeriod: ''
       });
+      setResumePreview('');
       setShowApplyForm(false);
       alert('Application submitted successfully!');
     } catch (error) {
       console.error('Error submitting application:', error);
+      alert('Error submitting application. Please try again.');
     }
   };
 
@@ -690,15 +710,36 @@ export default function Recruitment() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Resume URL *</label>
-                  <input
-                    type="url"
-                    value={application.resume}
-                    onChange={(e) => setApplication({ ...application, resume: e.target.value })}
-                    placeholder="Link to your resume (Google Drive, LinkedIn, etc.)"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  />
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Resume (URL or File Upload) *</label>
+                  <div className="space-y-2">
+                    <input
+                      type="url"
+                      value={application.resume}
+                      onChange={(e) => setApplication({ ...application, resume: e.target.value })}
+                      placeholder="Link to your resume (Google Drive, LinkedIn, etc.)"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <div className="text-sm text-gray-500">- OR -</div>
+                    <input
+                      name="resumeFile"
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const preview = await fileToDataUrl(file);
+                          setResumePreview(preview);
+                          setApplication({ ...application, resume: preview });
+                        }
+                      }}
+                    />
+                    {resumePreview && (
+                      <div className="text-sm text-green-600">
+                        ✓ File selected: {application.resume?.substring(0, 50)}...
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div>
