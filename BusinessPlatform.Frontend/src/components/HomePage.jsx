@@ -35,7 +35,11 @@ export default function HomePage() {
         bookingApi.getMovies()
       ]);
 
-      setProducts(productsRes.data.filter(p => p.status === 'Active').slice(0, 4));
+      setProducts(productsRes.data.filter(p => p.status === 'Active').sort((a, b) => {
+        const seqA = a.displaySequence === 0 || a.displaySequence === undefined ? Number.MAX_SAFE_INTEGER : a.displaySequence;
+        const seqB = b.displaySequence === 0 || b.displaySequence === undefined ? Number.MAX_SAFE_INTEGER : b.displaySequence;
+        return seqA - seqB;
+      }).slice(0, 4));
       setAds(adsRes.data.filter(a => a.status === 'Active').slice(0, 4));
       setJobs(jobsRes.data.filter(j => j.status === 'Active').slice(0, 4));
       setTransports(transportsRes.data.filter(t => t.status === 'Active').slice(0, 3));

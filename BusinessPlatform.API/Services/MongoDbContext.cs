@@ -36,5 +36,6 @@ namespace BusinessPlatform.API.Services
         public IMongoCollection<Booking> Bookings => _database.GetCollection<Booking>("Bookings");
         public IMongoCollection<State> States => _database.GetCollection<State>("States");
         public IMongoCollection<District> Districts => _database.GetCollection<District>("Districts");
+        public IMongoCollection<ValidationSetting> ValidationSettings => _database.GetCollection<ValidationSetting>("ValidationSettings");
     }
 }

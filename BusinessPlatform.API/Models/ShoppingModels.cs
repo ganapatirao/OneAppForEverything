@@ -1,6 +1,7 @@
 using MongoDB.Bson;
 
 using MongoDB.Bson.Serialization.Attributes;
+using System.ComponentModel.DataAnnotations;
 
 
 
@@ -44,6 +45,18 @@ namespace BusinessPlatform.API.Models
 
 
 
+        [BsonElement("displaySequence")]
+
+        [Required(ErrorMessage = "Display sequence is required")]
+
+        [RegularExpression(@"^\d+$", ErrorMessage = "Display sequence must be numeric only")]
+
+        [Range(0, int.MaxValue, ErrorMessage = "Display sequence must be a positive integer")]
+
+        public int DisplaySequence { get; set; } = 0;
+
+
+
         [BsonElement("createdAt")]
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -66,18 +79,25 @@ namespace BusinessPlatform.API.Models
 
         [BsonElement("name")]
 
+        [Required(ErrorMessage = "Name is required")]
+        [StringLength(20, ErrorMessage = "Name must not exceed 20 characters")]
+        [RegularExpression(@"^[a-zA-Z\s\-']+$", ErrorMessage = "Name can only contain letters, spaces, hyphens, and apostrophes")]
         public string Name { get; set; } = string.Empty;
 
 
 
         [BsonElement("description")]
-
+        [Required(ErrorMessage = "Description is required")]
+        [StringLength(2000, ErrorMessage = "Description must not exceed 2000 characters")]
+        [RegularExpression(@"^[a-zA-Z0-9\s\.,!?;:'\""()\-]+$", ErrorMessage = "Description contains invalid characters")]
         public string Description { get; set; } = string.Empty;
 
 
 
         [BsonElement("price")]
-
+        [Required(ErrorMessage = "Price is required")]
+        [RegularExpression(@"^\d{1,7}$", ErrorMessage = "Price must be numeric only and not exceed 7 digits")]
+        [Range(0.01, 9999999, ErrorMessage = "Price must be greater than 0")]
         public decimal Price { get; set; }
 
 
@@ -89,25 +109,38 @@ namespace BusinessPlatform.API.Models
 
 
         [BsonElement("categoryName")]
-
+        [Required(ErrorMessage = "Category is required")]
         public string CategoryName { get; set; } = string.Empty;
 
 
 
-        [BsonElement("stock")]
+        [BsonElement("displaySequence")]
+        [Required(ErrorMessage = "Display sequence is required")]
+        [RegularExpression(@"^\d+$", ErrorMessage = "Display sequence must be numeric only")]
+        [Range(0, int.MaxValue, ErrorMessage = "Display sequence must be a positive integer")]
+        public int DisplaySequence { get; set; } = 0;
 
+
+
+        [BsonElement("stock")]
+        [Required(ErrorMessage = "Stock is required")]
+        [RegularExpression(@"^\d{1,7}$", ErrorMessage = "Stock must be numeric only and not exceed 7 digits")]
+        [Range(0, 9999999, ErrorMessage = "Stock must be 0 or greater")]
         public int Stock { get; set; }
 
 
 
         [BsonElement("seller")]
-
+        [Required(ErrorMessage = "Seller is required")]
+        [StringLength(50, ErrorMessage = "Seller must not exceed 50 characters")]
+        [RegularExpression(@"^[a-zA-Z\s\-']+$", ErrorMessage = "Seller can only contain letters, spaces, hyphens, and apostrophes")]
         public string Seller { get; set; } = string.Empty;
 
 
 
         [BsonElement("rating")]
-
+        [RegularExpression(@"^\d+(\.\d{1,2})?$", ErrorMessage = "Rating must be numeric")]
+        [Range(0, 5, ErrorMessage = "Rating must be between 0 and 5")]
         public double Rating { get; set; }
 
 
@@ -119,19 +152,21 @@ namespace BusinessPlatform.API.Models
 
 
         [BsonElement("imageUrl")]
-
+        [Required(ErrorMessage = "Primary image is required")]
         public string ImageUrl { get; set; } = string.Empty;
 
 
 
         [BsonElement("imageUrls")]
-
+        [Required(ErrorMessage = "At least one secondary image is required")]
+        [MinLength(1, ErrorMessage = "At least one secondary image is required")]
         public List<string> ImageUrls { get; set; } = new List<string>();
 
 
 
         [BsonElement("status")]
-
+        [Required(ErrorMessage = "Status is required")]
+        [RegularExpression(@"^(Active|Inactive)$", ErrorMessage = "Status must be either Active or Inactive")]
         public string Status { get; set; } = "Active";
 
 
@@ -143,15 +178,16 @@ namespace BusinessPlatform.API.Models
 
 
         [BsonElement("pros")]
-
+        [Required(ErrorMessage = "At least one pro is required")]
+        [MinLength(1, ErrorMessage = "At least one pro is required")]
         public List<string> Pros { get; set; } = new List<string>();
 
 
 
         [BsonElement("cons")]
-
+        [Required(ErrorMessage = "At least one con is required")]
+        [MinLength(1, ErrorMessage = "At least one con is required")]
         public List<string> Cons { get; set; } = new List<string>();
-
         [BsonElement("reviews")]
 
         public List<ProductReview> Reviews { get; set; } = new List<ProductReview>();

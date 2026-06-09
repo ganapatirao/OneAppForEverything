@@ -39,6 +39,7 @@ builder.Services.AddSwaggerGen(c =>
 
 // Configure MongoDB
 builder.Services.AddSingleton<MongoDbContext>();
+builder.Services.AddSingleton<ValidationService>();
 
 // Configure JWT Authentication
 var key = Encoding.ASCII.GetBytes(builder.Configuration["Jwt:Key"]!);
@@ -75,12 +76,12 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Seed data on startup - commented out temporarily to fix startup hanging
-// using (var scope = app.Services.CreateScope())
-// {
-//     var seedData = new SeedData(scope.ServiceProvider.GetRequiredService<MongoDbContext>());
-//     await seedData.SeedAsync();
-// }
+// Seed data on startup
+using (var scope = app.Services.CreateScope())
+{
+    var seedData = new SeedData(scope.ServiceProvider.GetRequiredService<MongoDbContext>());
+    await seedData.SeedAsync();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

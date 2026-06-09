@@ -46,7 +46,16 @@ export default function Shopping({ onCartChange }) {
 
       const response = await shoppingApi.getProducts();
 
-      setProducts(response.data.filter(p => p.status === 'Active'));
+      // Sort products by displaySequence (0 values appear last)
+      const sortedProducts = response.data
+        .filter(p => p.status === 'Active')
+        .sort((a, b) => {
+          const seqA = a.displaySequence === 0 || a.displaySequence === undefined ? Number.MAX_SAFE_INTEGER : a.displaySequence;
+          const seqB = b.displaySequence === 0 || b.displaySequence === undefined ? Number.MAX_SAFE_INTEGER : b.displaySequence;
+          return seqA - seqB;
+        });
+
+      setProducts(sortedProducts);
 
     } catch (error) {
 
@@ -64,6 +73,7 @@ export default function Shopping({ onCartChange }) {
 
       const response = await shoppingApi.getCategories();
 
+      // Backend already sorts by displaySequence, use as-is
       setCategories(response.data);
 
     } catch (error) {

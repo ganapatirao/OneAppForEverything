@@ -30,6 +30,10 @@ export default function AdminDashboard() {
   const [moviePreview, setMoviePreview] = useState('');
   const [customCategoryDescription, setCustomCategoryDescription] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [defaultDisplaySequence, setDefaultDisplaySequence] = useState(0);
+  const [productValidationErrors, setProductValidationErrors] = useState({});
+  const [productAdditionalImages, setProductAdditionalImages] = useState([]);
+  const [validationSettings, setValidationSettings] = useState({});
 
   // Filter states
   const [productFilter, setProductFilter] = useState({ name: '', category: '', status: '' });
@@ -94,7 +98,56 @@ export default function AdminDashboard() {
     loadMovies();
     loadCategories();
     loadAdCategories();
+    loadValidationSettings();
   }, [navigate]);
+
+  const loadValidationSettings = async () => {
+    try {
+      const response = await adminApi.getValidationSettings('Product');
+      const settingsDict = {};
+      response.data.forEach(setting => {
+        settingsDict[setting.fieldName] = setting;
+      });
+      setValidationSettings(settingsDict);
+    } catch (error) {
+      console.error('Failed to fetch validation settings:', error);
+    }
+  };
+
+  const validateField = (fieldName, value) => {
+    const setting = validationSettings[fieldName];
+    if (!setting) return { isValid: true, errors: [] };
+    
+    const errors = [];
+    const rules = setting.validationRules;
+    const messages = setting.errorMessages;
+    
+    // Required validation
+    if (rules.required && !value?.trim()) {
+      errors.push(messages.required || `${fieldName} is required`);
+    }
+    
+    // Max length validation
+    if (rules.maxLength && value.length > rules.maxLength) {
+      errors.push(messages.maxLength || `${fieldName} must not exceed ${rules.maxLength} characters`);
+    }
+    
+    // Regex pattern validation
+    if (rules.regexPattern && !new RegExp(rules.regexPattern).test(value)) {
+      errors.push(messages.pattern || `${fieldName} contains invalid characters`);
+    }
+    
+    // Min/Max value validation
+    if (rules.minValue && parseFloat(value) < rules.minValue) {
+      errors.push(messages.minValue || `${fieldName} must be at least ${rules.minValue}`);
+    }
+    
+    if (rules.maxValue && parseFloat(value) > rules.maxValue) {
+      errors.push(messages.maxValue || `${fieldName} must not exceed ${rules.maxValue}`);
+    }
+    
+    return { isValid: errors.length === 0, errors };
+  };
 
   const loadDashboard = async () => {
     try {
@@ -129,7 +182,8 @@ export default function AdminDashboard() {
 
   const loadProducts = async () => {
     try {
-      const response = await shoppingApi.getProducts();
+      const response = await adminApi.getProducts();
+      // Backend already sorts by displaySequence, use as-is
       setProducts(response.data);
     } catch (error) {
       console.error('Error loading products:', error);
@@ -183,7 +237,8 @@ export default function AdminDashboard() {
 
   const loadCategories = async () => {
     try {
-      const response = await shoppingApi.getCategories(true);
+      const response = await adminApi.getCategories();
+      // Backend already sorts by displaySequence, use as-is
       setCategories(response.data);
     } catch (error) {
       console.error('Error loading categories:', error);
@@ -246,8 +301,55 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleEditProduct = (product) => {
+  const handleEditProduct = async (product) => {
     setEditModal({ isOpen: true, type: 'product', data: product });
+    setProductValidationErrors({});
+    setProductAdditionalImages([]);
+    setSelectedCategory(product.categoryName || '');
+    console.log('Editing product:', product.categoryName, 'Categories:', categories);
+    
+    // Fetch default display sequence for the category
+    if (product.categoryName) {
+      try {
+        const response = await adminApi.getNextDisplaySequence(product.categoryName);
+        setDefaultDisplaySequence(response.data.nextSequence);
+      } catch (error) {
+        console.error('Error fetching next display sequence:', error);
+        setDefaultDisplaySequence(product.displaySequence || 0);
+      }
+    }
+  };
+
+  const handleEditCategory = (category) => {
+    setEditModal({ isOpen: true, type: 'category', data: category });
+  };
+
+  const handleDeleteCategory = async (categoryId) => {
+    if (confirm('Are you sure you want to delete this category?')) {
+      try {
+        await adminApi.deleteCategory(categoryId);
+        loadCategories();
+        alert('Category deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting category:', error);
+      }
+    }
+  };
+
+  const handleSaveCategory = async (categoryData) => {
+    try {
+      if (editModal.data?.id) {
+        await adminApi.updateCategory(editModal.data.id, categoryData);
+        alert('Category updated successfully!');
+      } else {
+        await adminApi.createCategory(categoryData);
+        alert('Category created successfully!');
+      }
+      setEditModal({ isOpen: false, type: null, data: null });
+      loadCategories();
+    } catch (error) {
+      console.error('Error saving category:', error);
+    }
   };
 
   const handleSaveProduct = async (productData) => {
@@ -715,7 +817,7 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <div className="flex space-x-4 mb-8 border-b overflow-x-auto">
-          {['overview', 'products', 'ads', 'jobs', 'transport', 'packages', 'movies', 'orders', 'users'].map((tab) => (
+          {['overview', 'products', 'categories', 'ads', 'jobs', 'transport', 'packages', 'movies', 'orders', 'users'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -792,6 +894,9 @@ export default function AdminDashboard() {
                 onClick={() => {
                   setProductPrimaryPreview('');
                   setProductAdditionalPreviews([]);
+                  setProductAdditionalImages([]);
+                  setProductValidationErrors({});
+                  setSelectedCategory('');
                   setEditModal({ isOpen: true, type: 'product', data: null });
                 }}
                 className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
@@ -837,6 +942,7 @@ export default function AdminDashboard() {
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Seller</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Price</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Stock</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Display Sequence</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
                   </tr>
@@ -856,6 +962,7 @@ export default function AdminDashboard() {
                       <td className="px-4 py-3 text-sm text-gray-800">{product.seller}</td>
                       <td className="px-4 py-3 text-sm text-gray-800">${product.price.toFixed(2)}</td>
                       <td className="px-4 py-3 text-sm text-gray-800">{product.stock}</td>
+                      <td className="px-4 py-3 text-sm text-gray-800">{product.displaySequence || 0}</td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           product.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
@@ -880,6 +987,69 @@ export default function AdminDashboard() {
                         </button>
                         <button
                           onClick={() => handleDeleteProduct(product.id)}
+                          className="text-red-600 hover:text-red-800"
+                          title="Delete"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Categories Tab */}
+        {activeTab === 'categories' && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-gray-800">Categories ({categories.length})</h2>
+              <button
+                onClick={() => {
+                  setEditModal({ isOpen: true, type: 'category', data: null });
+                }}
+                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              >
+                <Plus size={16} />
+                Add Category
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Name</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Description</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Display Sequence</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {categories.map((category) => (
+                    <tr key={category.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm text-gray-800">{category.name}</td>
+                      <td className="px-4 py-3 text-sm text-gray-800">{category.description}</td>
+                      <td className="px-4 py-3 text-sm text-gray-800">{category.displaySequence || 0}</td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          category.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {category.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 flex gap-2">
+                        <button
+                          onClick={() => handleEditCategory(category)}
+                          className="text-blue-600 hover:text-blue-800"
+                          title="Edit"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCategory(category.id)}
                           className="text-red-600 hover:text-red-800"
                           title="Delete"
                         >
@@ -1547,26 +1717,109 @@ export default function AdminDashboard() {
               {editModal.type === 'product' && (
                 <form onSubmit={async (e) => {
                   e.preventDefault();
-                  const categoryName = selectedCategory === 'other'
-                    ? customCategory
-                    : selectedCategory;
+                  
+                  // Validate all fields using MongoDB settings
+                  const errors = {};
+                  const name = e.target.name.value;
+                  const description = e.target.description.value;
+                  const price = e.target.price.value;
+                  const stock = e.target.stock.value;
+                  const seller = e.target.seller.value;
+                  const prosValue = e.target.pros.value;
+                  const consValue = e.target.cons.value;
+                  const categoryName = selectedCategory === 'other' ? customCategory : e.target.categorySelect.value;
+                  console.log('Category Name:', categoryName, 'Selected Category:', selectedCategory, 'Custom Category:', customCategory);
+                  
+                  // Name validation
+                  const nameResult = validateField('name', name);
+                  if (!nameResult.isValid) errors.name = nameResult.errors[0];
+                  
+                  // Description validation
+                  const descriptionResult = validateField('description', description);
+                  if (!descriptionResult.isValid) errors.description = descriptionResult.errors[0];
+                  
+                  // Price validation
+                  const priceResult = validateField('price', price);
+                  if (!priceResult.isValid) errors.price = priceResult.errors[0];
+                  
+                  // Stock validation
+                  const stockResult = validateField('stock', stock);
+                  if (!stockResult.isValid) errors.stock = stockResult.errors[0];
+                  
+                  // Seller validation
+                  const sellerResult = validateField('seller', seller);
+                  if (!sellerResult.isValid) errors.seller = sellerResult.errors[0];
+                  
+                  // Category validation
+                  if (!categoryName || !categoryName.trim()) {
+                    errors.category = 'Category is required';
+                  }
+                  
+                  // Pros validation
+                  const prosArray = prosValue ? prosValue.split('\n').map(p => p.trim()).filter(p => p) : [];
+                  if (prosArray.length === 0) {
+                    errors.pros = 'At least one pro is required';
+                  } else {
+                    prosArray.forEach((pro, idx) => {
+                      if (pro.length > 500) {
+                        errors.pros = `Pro ${idx + 1} must not exceed 500 characters`;
+                      }
+                    });
+                  }
+                  
+                  // Cons validation
+                  const consArray = consValue ? consValue.split('\n').map(c => c.trim()).filter(c => c) : [];
+                  if (consArray.length === 0) {
+                    errors.cons = 'At least one con is required';
+                  } else {
+                    consArray.forEach((con, idx) => {
+                      if (con.length > 500) {
+                        errors.cons = `Con ${idx + 1} must not exceed 500 characters`;
+                      }
+                    });
+                  }
+                  
+                  // Image validation
+                  if (!productPrimaryPreview && !editModal.data?.imageUrl) {
+                    errors.imageUrl = 'Primary image is required';
+                  }
+                  
+                  const existingAllImages = [...productAdditionalPreviews, ...(editModal.data?.imageUrls || [])];
+                  if (existingAllImages.length === 0) {
+                    errors.imageUrls = 'At least one secondary image is required';
+                  }
+                  
+                  if (Object.keys(errors).length > 0) {
+                    setProductValidationErrors(errors);
+                    return;
+                  }
+                  
+                  setProductValidationErrors({});
+                  
+                  // Image validation
                   const primaryImage = await fileToDataUrl(e.target.imageUrl.files?.[0]);
                   const uploadedImageUrls = await filesToDataUrls(e.target.imageUrls.files);
-                  const imageUrlsArray = uploadedImageUrls.length > 0
-                    ? uploadedImageUrls
-                    : (editModal.data?.imageUrls || []);
+                  const newAllImages = [...productAdditionalImages, ...uploadedImageUrls];
+                  
+                  if (!primaryImage && !editModal.data?.imageUrl) {
+                    errors.imageUrl = 'Primary image is required';
+                  }
+                  
+                  if (newAllImages.length === 0 && (!editModal.data?.imageUrls || editModal.data.imageUrls.length === 0)) {
+                    errors.imageUrls = 'At least one secondary image is required';
+                  }
+                  
+                  if (Object.keys(errors).length > 0) {
+                    setProductValidationErrors(errors);
+                    return;
+                  }
+                  
+                  const imageUrlsArray = newAllImages.length > 0 ? newAllImages : (editModal.data?.imageUrls || []);
                   const categoryImage = await fileToDataUrl(e.target.customCategoryImage?.files?.[0]);
                   if (selectedCategory === 'other' && categoryImage) {
                     setCustomCategoryUrl(categoryImage);
                   }
-                  const prosValue = e.target.pros.value;
-                  const prosArray = prosValue
-                    ? prosValue.split('\n').map(p => p.trim()).filter(p => p)
-                    : [];
-                  const consValue = e.target.cons.value;
-                  const consArray = consValue
-                    ? consValue.split('\n').map(c => c.trim()).filter(c => c)
-                    : [];
+                  
                   handleSaveProduct({
                     name: e.target.name.value,
                     description: e.target.description.value,
@@ -1579,77 +1832,213 @@ export default function AdminDashboard() {
                     pros: prosArray,
                     cons: consArray,
                     status: e.target.status.value,
-                    categoryName: categoryName
+                    categoryName: categoryName,
+                    displaySequence: parseInt(e.target.displaySequence.value) || 0
                   });
                   setCustomCategory('');
                   setSelectedCategory('');
                   setProductPrimaryPreview('');
                   setProductAdditionalPreviews([]);
+                  setProductAdditionalImages([]);
+                  setProductValidationErrors({});
                 }}>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                      <input name="name" defaultValue={editModal.data?.name} className="w-full px-3 py-2 border border-gray-300 rounded-lg" required maxLength="200" pattern="[a-zA-Z0-9\s\-_.,&()@#%]+" title="Only letters, numbers, spaces and common punctuation allowed" />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                      <input 
+                        name="name" 
+                        defaultValue={editModal.data?.name} 
+                        className={`w-full px-3 py-2 border rounded-lg ${productValidationErrors.name ? 'border-red-500' : 'border-gray-300'}`} 
+                        required 
+                        maxLength={validationSettings.name?.validationRules.maxLength || 20} 
+                        onBlur={(e) => {
+                          const result = validateField('name', e.target.value);
+                          setProductValidationErrors({...productValidationErrors, name: result.errors[0] || ''});
+                        }}
+                      />
+                      <div className="flex justify-between mt-1">
+                        <span className="text-xs text-red-500">{productValidationErrors.name || ''}</span>
+                        <span className="text-xs text-gray-500">{editModal.data?.name?.length || 0}/{validationSettings.name?.validationRules.maxLength || 20}</span>
+                      </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                      <textarea name="description" defaultValue={editModal.data?.description} className="w-full px-3 py-2 border border-gray-300 rounded-lg" rows="3" maxLength="2000" />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                      <textarea 
+                        name="description" 
+                        defaultValue={editModal.data?.description} 
+                        className={`w-full px-3 py-2 border rounded-lg ${productValidationErrors.description ? 'border-red-500' : 'border-gray-300'}`} 
+                        rows="3" 
+                        maxLength={validationSettings.description?.validationRules.maxLength || 2000}
+                        onBlur={(e) => {
+                          const result = validateField('description', e.target.value);
+                          setProductValidationErrors({...productValidationErrors, description: result.errors[0] || ''});
+                        }}
+                      />
+                      <div className="flex justify-between mt-1">
+                        <span className="text-xs text-red-500">{productValidationErrors.description || ''}</span>
+                        <span className="text-xs text-gray-500">{editModal.data?.description?.length || 0}/{validationSettings.description?.validationRules.maxLength || 2000}</span>
+                      </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
-                        <input name="price" type="number" step="0.01" min="0" max="10000000" defaultValue={editModal.data?.price} className="w-full px-3 py-2 border border-gray-300 rounded-lg" required maxLength="10" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Price *</label>
+                        <input 
+                          name="price" 
+                          type="number" 
+                          step="0.01" 
+                          min={validationSettings.price?.validationRules.minValue || 0} 
+                          max={validationSettings.price?.validationRules.maxValue || 9999999} 
+                          defaultValue={editModal.data?.price} 
+                          className={`w-full px-3 py-2 border rounded-lg ${productValidationErrors.price ? 'border-red-500' : 'border-gray-300'}`} 
+                          required 
+                          maxLength="7"
+                          onBlur={(e) => {
+                            const result = validateField('price', e.target.value);
+                            setProductValidationErrors({...productValidationErrors, price: result.errors[0] || ''});
+                          }}
+                        />
+                        <span className="text-xs text-red-500 mt-1 block">{productValidationErrors.price || ''}</span>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Stock</label>
-                        <input name="stock" type="number" min="0" max="10000" defaultValue={editModal.data?.stock} className="w-full px-3 py-2 border border-gray-300 rounded-lg" required maxLength="5" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Stock *</label>
+                        <input 
+                          name="stock" 
+                          type="number" 
+                          min={validationSettings.stock?.validationRules.minValue || 0} 
+                          max={validationSettings.stock?.validationRules.maxValue || 9999999} 
+                          defaultValue={editModal.data?.stock} 
+                          className={`w-full px-3 py-2 border rounded-lg ${productValidationErrors.stock ? 'border-red-500' : 'border-gray-300'}`} 
+                          required 
+                          maxLength="7"
+                          onBlur={(e) => {
+                            const result = validateField('stock', e.target.value);
+                            setProductValidationErrors({...productValidationErrors, stock: result.errors[0] || ''});
+                          }}
+                        />
+                        <span className="text-xs text-red-500 mt-1 block">{productValidationErrors.stock || ''}</span>
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Seller</label>
-                      <input name="seller" defaultValue={editModal.data?.seller} className="w-full px-3 py-2 border border-gray-300 rounded-lg" maxLength="100" pattern="[a-zA-Z0-9\s\-_.,&()@#%]+" title="Only letters, numbers, spaces and common punctuation allowed" />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Seller *</label>
+                      <input 
+                        name="seller" 
+                        defaultValue={editModal.data?.seller} 
+                        className={`w-full px-3 py-2 border rounded-lg ${productValidationErrors.seller ? 'border-red-500' : 'border-gray-300'}`} 
+                        maxLength={validationSettings.seller?.validationRules.maxLength || 50}
+                        onBlur={(e) => {
+                          const result = validateField('seller', e.target.value);
+                          setProductValidationErrors({...productValidationErrors, seller: result.errors[0] || ''});
+                        }}
+                      />
+                      <div className="flex justify-between mt-1">
+                        <span className="text-xs text-red-500">{productValidationErrors.seller || ''}</span>
+                        <span className="text-xs text-gray-500">{editModal.data?.seller?.length || 0}/{validationSettings.seller?.validationRules.maxLength || 50}</span>
+                      </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Primary Image</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Display Sequence *</label>
+                      <input
+                        name="displaySequence"
+                        type="number"
+                        min="0"
+                        value={editModal.data?.displaySequence || defaultDisplaySequence || 0}
+                        onChange={(e) => setDefaultDisplaySequence(parseInt(e.target.value) || 0)}
+                        className={`w-full px-3 py-2 border rounded-lg ${productValidationErrors.displaySequence ? 'border-red-500' : 'border-gray-300'}`}
+                        required
+                        onBlur={(e) => {
+                          const result = validateField('displaySequence', parseInt(e.target.value));
+                          setProductValidationErrors({...productValidationErrors, displaySequence: result.errors[0] || ''});
+                        }}
+                      />
+                      <span className="text-xs text-red-500 mt-1 block">{productValidationErrors.displaySequence || ''}</span>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Primary Image *</label>
                       <input 
                         name="imageUrl" 
                         type="file" 
                         accept="image/*" 
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        className={`w-full px-3 py-2 border rounded-lg ${productValidationErrors.imageUrl ? 'border-red-500' : 'border-gray-300'}`}
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (file) {
                             const preview = await fileToDataUrl(file);
                             setProductPrimaryPreview(preview);
+                            setProductValidationErrors({...productValidationErrors, imageUrl: ''});
                           }
                         }}
                       />
+                      <span className="text-xs text-red-500 mt-1 block">{productValidationErrors.imageUrl || ''}</span>
                       {(productPrimaryPreview || editModal.data?.imageUrl) && (
-                        <img src={productPrimaryPreview || editModal.data?.imageUrl} alt="Preview" className="mt-2 h-32 w-32 rounded object-cover border" />
+                        <div className="mt-2 relative inline-block">
+                          <img src={productPrimaryPreview || editModal.data?.imageUrl} alt="Preview" className="h-32 w-32 rounded object-cover border" />
+                          {(productPrimaryPreview || editModal.data?.imageUrl) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setProductPrimaryPreview('');
+                                setProductValidationErrors({...productValidationErrors, imageUrl: 'Primary image is required'});
+                              }}
+                              className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                            >
+                              <X size={16} />
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Additional Images</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Secondary Images *</label>
                       <input 
                         name="imageUrls" 
                         type="file" 
                         accept="image/*" 
                         multiple 
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        className={`w-full px-3 py-2 border rounded-lg ${productValidationErrors.imageUrls ? 'border-red-500' : 'border-gray-300'}`}
                         onChange={async (e) => {
                           const files = e.target.files;
                           if (files && files.length > 0) {
                             const previews = await filesToDataUrls(files);
-                            setProductAdditionalPreviews(previews);
+                            setProductAdditionalImages([...productAdditionalImages, ...previews]);
+                            setProductAdditionalPreviews([...productAdditionalPreviews, ...previews]);
+                            setProductValidationErrors({...productValidationErrors, imageUrls: ''});
                           }
                         }}
                       />
+                      <span className="text-xs text-red-500 mt-1 block">{productValidationErrors.imageUrls || ''}</span>
                       <div className="mt-2 flex gap-2 flex-wrap">
-                        {productAdditionalPreviews.length > 0 && productAdditionalPreviews.map((url, index) => (
-                          <img key={`new-${index}`} src={url} alt={`New ${index + 1}`} className="h-20 w-20 rounded object-cover border" />
+                        {productAdditionalImages.map((url, index) => (
+                          <div key={`new-${index}`} className="relative inline-block">
+                            <img src={url} alt={`New ${index + 1}`} className="h-20 w-20 rounded object-cover border" />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newImages = productAdditionalImages.filter((_, i) => i !== index);
+                                const newPreviews = productAdditionalPreviews.filter((_, i) => i !== index);
+                                setProductAdditionalImages(newImages);
+                                setProductAdditionalPreviews(newPreviews);
+                              }}
+                              className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
                         ))}
-                        {editModal.data?.imageUrls?.length > 0 && editModal.data.imageUrls.map((url, index) => (
-                          <img key={`existing-${index}`} src={url} alt={`Existing ${index + 1}`} className="h-20 w-20 rounded object-cover border" />
+                        {editModal.data?.imageUrls?.map((url, index) => (
+                          <div key={`existing-${index}`} className="relative inline-block">
+                            <img src={url} alt={`Existing ${index + 1}`} className="h-20 w-20 rounded object-cover border" />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const existingImages = editModal.data.imageUrls.filter((_, i) => i !== index);
+                                editModal.data.imageUrls = existingImages;
+                                setEditModal({...editModal, data: {...editModal.data, imageUrls: existingImages}});
+                              }}
+                              className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -1660,38 +2049,98 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Pros (one per line)</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Pros (one per line, max 500 chars each) *</label>
                       <textarea
                         name="pros"
                         defaultValue={editModal.data?.pros ? editModal.data.pros.join('\n') : ''}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        className={`w-full px-3 py-2 border rounded-lg ${productValidationErrors.pros ? 'border-red-500' : 'border-gray-300'}`}
                         rows="3"
-                        maxLength="1000"
                         placeholder="Enter each pro on a new line"
+                        onBlur={(e) => {
+                          const value = e.target.value;
+                          const prosArray = value ? value.split('\n').map(p => p.trim()).filter(p => p) : [];
+                          if (prosArray.length === 0) {
+                            setProductValidationErrors({...productValidationErrors, pros: 'At least one pro is required'});
+                          } else {
+                            let hasError = false;
+                            prosArray.forEach((pro, idx) => {
+                              if (pro.length > 500) {
+                                setProductValidationErrors({...productValidationErrors, pros: `Pro ${idx + 1} must not exceed 500 characters`});
+                                hasError = true;
+                              } else if (!/^[a-zA-Z0-9\s\.,!?;:'"()\-]+$/.test(pro)) {
+                                setProductValidationErrors({...productValidationErrors, pros: `Pro ${idx + 1} contains invalid characters`});
+                                hasError = true;
+                              }
+                            });
+                            if (!hasError) {
+                              setProductValidationErrors({...productValidationErrors, pros: ''});
+                            }
+                          }
+                        }}
                       />
+                      <span className="text-xs text-red-500 mt-1 block">{productValidationErrors.pros || ''}</span>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Cons (one per line)</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Cons (one per line, max 500 chars each) *</label>
                       <textarea
                         name="cons"
                         defaultValue={editModal.data?.cons ? editModal.data.cons.join('\n') : ''}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        className={`w-full px-3 py-2 border rounded-lg ${productValidationErrors.cons ? 'border-red-500' : 'border-gray-300'}`}
                         rows="3"
-                        maxLength="1000"
                         placeholder="Enter each con on a new line"
+                        onBlur={(e) => {
+                          const value = e.target.value;
+                          const consArray = value ? value.split('\n').map(c => c.trim()).filter(c => c) : [];
+                          if (consArray.length === 0) {
+                            setProductValidationErrors({...productValidationErrors, cons: 'At least one con is required'});
+                          } else {
+                            let hasError = false;
+                            consArray.forEach((con, idx) => {
+                              if (con.length > 500) {
+                                setProductValidationErrors({...productValidationErrors, cons: `Con ${idx + 1} must not exceed 500 characters`});
+                                hasError = true;
+                              } else if (!/^[a-zA-Z0-9\s\.,!?;:'"()\-]+$/.test(con)) {
+                                setProductValidationErrors({...productValidationErrors, cons: `Con ${idx + 1} contains invalid characters`});
+                                hasError = true;
+                              }
+                            });
+                            if (!hasError) {
+                              setProductValidationErrors({...productValidationErrors, cons: ''});
+                            }
+                          }
+                        }}
                       />
+                      <span className="text-xs text-red-500 mt-1 block">{productValidationErrors.cons || ''}</span>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
                       <select
                         name="categorySelect"
                         value={selectedCategory || editModal.data?.categoryName || ''}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        className={`w-full px-3 py-2 border rounded-lg ${productValidationErrors.category ? 'border-red-500' : 'border-gray-300'}`}
                         required
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           setSelectedCategory(e.target.value);
+                          setProductValidationErrors({...productValidationErrors, category: ''});
                           if (e.target.value === 'other') {
                             setCustomCategory('');
+                          } else if (e.target.value) {
+                            // Fetch default display sequence for the selected category
+                            try {
+                              const response = await adminApi.getNextDisplaySequence(e.target.value);
+                              setDefaultDisplaySequence(response.data.nextSequence);
+                            } catch (error) {
+                              console.error('Error fetching next display sequence:', error);
+                              setDefaultDisplaySequence(0);
+                            }
+                          }
+                        }}
+                        onBlur={(e) => {
+                          const value = e.target.value;
+                          if (!value) {
+                            setProductValidationErrors({...productValidationErrors, category: 'Category is required'});
+                          } else {
+                            setProductValidationErrors({...productValidationErrors, category: ''});
                           }
                         }}
                       >
@@ -1700,7 +2149,11 @@ export default function AdminDashboard() {
                           <option key={category.id} value={category.name}>{category.name}</option>
                         ))}
                         <option value="other">Other (Add New)</option>
+                        {editModal.data?.categoryName && !categories.find(c => c.name === editModal.data.categoryName) && (
+                          <option value={editModal.data.categoryName}>{editModal.data.categoryName} (Existing)</option>
+                        )}
                       </select>
+                      <span className="text-xs text-red-500 mt-1 block">{productValidationErrors.category || ''}</span>
                     </div>
                     {selectedCategory === 'other' && (
                       <div id="customCategoryField" className="space-y-4">
@@ -2265,6 +2718,49 @@ export default function AdminDashboard() {
                       {(moviePreview || editModal.data?.imageUrl) && (
                         <img src={moviePreview || editModal.data?.imageUrl} alt="Preview" className="mt-2 h-32 w-32 rounded object-cover border" />
                       )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                      <select name="status" defaultValue={editModal.data?.status || 'Active'} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                      </select>
+                    </div>
+                    <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
+                      Save
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {editModal.type === 'category' && (
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  const categoryData = {
+                    name: e.target.name.value,
+                    description: e.target.description.value,
+                    imageUrl: e.target.imageUrl.value,
+                    displaySequence: parseInt(e.target.displaySequence.value) || 0,
+                    status: e.target.status.value
+                  };
+                  handleSaveCategory(categoryData);
+                }}>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                      <input name="name" defaultValue={editModal.data?.name} className="w-full px-3 py-2 border border-gray-300 rounded-lg" required />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                      <textarea name="description" defaultValue={editModal.data?.description} className="w-full px-3 py-2 border border-gray-300 rounded-lg" rows="3" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                      <input name="imageUrl" defaultValue={editModal.data?.imageUrl} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Display Sequence *</label>
+                      <input name="displaySequence" type="number" min="0" defaultValue={editModal.data?.displaySequence || 0} className="w-full px-3 py-2 border border-gray-300 rounded-lg" required />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>

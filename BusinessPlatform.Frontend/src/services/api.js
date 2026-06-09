@@ -119,10 +119,17 @@ export const adminApi = {
   updateOrderStatus: (id, status) => api.put(`/admin/orders/${id}/status`, { status }),
   deleteOrder: (id) => api.delete(`/admin/orders/${id}`),
   // Products
+  getProducts: () => api.get('/admin/products'),
+  getNextDisplaySequence: (categoryName) => api.get(`/admin/products/next-sequence/${categoryName}`),
   createProduct: (data) => api.post('/admin/products', data),
   updateProduct: (id, data) => api.put(`/admin/products/${id}`, data),
   deleteProduct: (id) => api.delete(`/admin/products/${id}`),
   updateProductStatus: (id, status) => api.patch(`/admin/products/${id}/status`, { status }),
+  // Shopping Categories
+  getCategories: () => api.get('/admin/categories'),
+  createCategory: (data) => api.post('/admin/categories', data),
+  updateCategory: (id, data) => api.put(`/admin/categories/${id}`, data),
+  deleteCategory: (id) => api.delete(`/admin/categories/${id}`),
   // Ads
   createAd: (data) => api.post('/admin/ads', data),
   updateAd: (id, data) => api.put(`/admin/ads/${id}`, data),
@@ -155,6 +162,10 @@ export const adminApi = {
   updateMovie: (id, data) => api.put(`/admin/movies/${id}`, data),
   deleteMovie: (id) => api.delete(`/admin/movies/${id}`),
   updateMovieStatus: (id, status) => api.patch(`/admin/movies/${id}/status`, { status }),
+  // Validation Settings
+  getValidationSettings: (entityType) => api.get(`/admin/validation-settings/${entityType}`),
+  createValidationSetting: (data) => api.post('/admin/validation-settings', data),
+  updateValidationSetting: (id, data) => api.put(`/admin/validation-settings/${id}`, data),
 };
 
 export default api;

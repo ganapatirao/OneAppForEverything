@@ -21,7 +21,8 @@ namespace BusinessPlatform.API.Controllers
         public async Task<IActionResult> GetProducts()
         {
             var products = await _context.Products.Find(_ => true).ToListAsync();
-            return Ok(products);
+            var sortedProducts = products.OrderBy(p => p.DisplaySequence).ToList();
+            return Ok(sortedProducts);
         }
 
         [HttpGet("products/{id}")]
@@ -87,17 +88,18 @@ namespace BusinessPlatform.API.Controllers
         public async Task<IActionResult> GetCategories([FromQuery] bool includeAll = false)
         {
             var categories = await _context.Categories.Find(_ => true).ToListAsync();
+            var sortedCategories = categories.OrderBy(c => c.DisplaySequence).ToList();
 
             if (includeAll)
             {
                 // Return all categories for admin
-                return Ok(categories);
+                return Ok(sortedCategories);
             }
 
             var products = await _context.Products.Find(_ => true).ToListAsync();
 
             // Filter categories that have at least one active product
-            var categoriesWithActiveProducts = categories
+            var categoriesWithActiveProducts = sortedCategories
                 .Where(c => products.Any(p => p.CategoryName == c.Name && p.Status == "Active"))
                 .ToList();
 

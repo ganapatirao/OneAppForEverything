@@ -16,11 +16,13 @@ namespace BusinessPlatform.API.Controllers
     {
         private readonly MongoDbContext _context;
         private readonly IConfiguration _configuration;
+        private readonly ValidationService _validationService;
 
-        public AdminController(MongoDbContext context, IConfiguration configuration)
+        public AdminController(MongoDbContext context, IConfiguration configuration, ValidationService validationService)
         {
             _context = context;
             _configuration = configuration;
+            _validationService = validationService;
         }
 
         private string HashPassword(string password)
@@ -235,13 +237,186 @@ namespace BusinessPlatform.API.Controllers
         }
 
         // Products CRUD
+        [HttpGet("products")]
+        [Authorize]
+        public async Task<IActionResult> GetProducts()
+        {
+            var products = await _context.Products.Find(_ => true).ToListAsync();
+            var sortedProducts = products.OrderBy(p => p.DisplaySequence).ToList();
+            return Ok(sortedProducts);
+        }
+
+        [HttpGet("products/next-sequence/{categoryName}")]
+        [Authorize]
+        public async Task<IActionResult> GetNextDisplaySequence(string categoryName)
+        {
+            var lastProduct = await _context.Products
+                .Find(p => p.CategoryName == categoryName)
+                .SortByDescending(p => p.DisplaySequence)
+                .FirstOrDefaultAsync();
+            
+            var nextSequence = (lastProduct?.DisplaySequence ?? 0) + 1;
+            return Ok(new { nextSequence });
+        }
+
         [HttpPost("products")]
         [Authorize]
         public async Task<IActionResult> CreateProduct([FromBody] Product product)
         {
+            // Get validation settings from MongoDB
+            var validationSettings = await _validationService.GetValidationSettingsAsync("Product");
+
+            // Validate using MongoDB settings
+            var errors = new Dictionary<string, List<string>>();
+
+            if (validationSettings.ContainsKey("name"))
+            {
+                var nameResult = _validationService.ValidateField("name", product.Name, validationSettings["name"]);
+                if (!nameResult.IsValid) errors["name"] = nameResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("description"))
+            {
+                var descriptionResult = _validationService.ValidateField("description", product.Description, validationSettings["description"]);
+                if (!descriptionResult.IsValid) errors["description"] = descriptionResult.Errors;
+            }
+            
+            if (validationSettings.ContainsKey("price"))
+            {
+                var priceResult = _validationService.ValidateField("price", product.Price, validationSettings["price"]);
+                if (!priceResult.IsValid) errors["price"] = priceResult.Errors;
+            }
+            
+            if (validationSettings.ContainsKey("stock"))
+            {
+                var stockResult = _validationService.ValidateField("stock", product.Stock, validationSettings["stock"]);
+                if (!stockResult.IsValid) errors["stock"] = stockResult.Errors;
+            }
+            
+            if (validationSettings.ContainsKey("seller"))
+            {
+                var sellerResult = _validationService.ValidateField("seller", product.Seller, validationSettings["seller"]);
+                if (!sellerResult.IsValid) errors["seller"] = sellerResult.Errors;
+            }
+            
+            if (validationSettings.ContainsKey("imageUrl"))
+            {
+                var imageUrlResult = _validationService.ValidateField("imageUrl", product.ImageUrl, validationSettings["imageUrl"]);
+                if (!imageUrlResult.IsValid) errors["imageUrl"] = imageUrlResult.Errors;
+            }
+            
+            if (validationSettings.ContainsKey("imageUrls"))
+            {
+                var imageUrlsResult = _validationService.ValidateField("imageUrls", product.ImageUrls?.Count ?? 0, validationSettings["imageUrls"]);
+                if (!imageUrlsResult.IsValid) errors["imageUrls"] = imageUrlsResult.Errors;
+            }
+            
+            if (validationSettings.ContainsKey("categoryName"))
+            {
+                // Skip backend validation for categoryName if it's provided
+                // Frontend handles the required validation
+                if (string.IsNullOrEmpty(product.CategoryName))
+                {
+                    errors["categoryName"] = new List<string> { "Category is required" };
+                }
+            }
+            
+            if (validationSettings.ContainsKey("status"))
+            {
+                var statusResult = _validationService.ValidateField("status", product.Status, validationSettings["status"]);
+                if (!statusResult.IsValid) errors["status"] = statusResult.Errors;
+            }
+            
+            if (validationSettings.ContainsKey("pros"))
+            {
+                var prosResult = _validationService.ValidateField("pros", product.Pros?.Count ?? 0, validationSettings["pros"]);
+                if (!prosResult.IsValid) errors["pros"] = prosResult.Errors;
+            }
+            
+            if (validationSettings.ContainsKey("cons"))
+            {
+                var consResult = _validationService.ValidateField("cons", product.Cons?.Count ?? 0, validationSettings["cons"]);
+                if (!consResult.IsValid) errors["cons"] = consResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("displaySequence"))
+            {
+                var displaySequenceResult = _validationService.ValidateField("displaySequence", product.DisplaySequence, validationSettings["displaySequence"]);
+                if (!displaySequenceResult.IsValid) errors["displaySequence"] = displaySequenceResult.Errors;
+            }
+
+            if (errors.Count > 0)
+            {
+                return BadRequest(new { message = "Validation failed", errors });
+            }
+
+            // Fallback to ModelState validation
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { message = "Validation failed", errors = ModelState });
+            }
+
+            // Additional validation for pros and cons item length
+            if (product.Pros != null)
+            {
+                foreach (var pro in product.Pros)
+                {
+                    if (pro.Length > 500)
+                    {
+                        return BadRequest(new { message = "Pro must not exceed 500 characters" });
+                    }
+                }
+            }
+
+            if (product.Cons != null)
+            {
+                foreach (var con in product.Cons)
+                {
+                    if (con.Length > 500)
+                    {
+                        return BadRequest(new { message = "Con must not exceed 500 characters" });
+                    }
+                }
+            }
+
+            // Validate image URLs - allow data URLs
+            if (!string.IsNullOrEmpty(product.ImageUrl) && !product.ImageUrl.StartsWith("data:") && !Uri.TryCreate(product.ImageUrl, UriKind.Absolute, out _))
+            {
+                return BadRequest(new { message = "Invalid primary image URL format" });
+            }
+
+            if (product.ImageUrls != null)
+            {
+                foreach (var url in product.ImageUrls)
+                {
+                    if (!string.IsNullOrEmpty(url) && !url.StartsWith("data:") && !Uri.TryCreate(url, UriKind.Absolute, out _))
+                    {
+                        return BadRequest(new { message = "Invalid secondary image URL format" });
+                    }
+                }
+            }
+
             product.Id = null;
             product.CreatedAt = DateTime.UtcNow;
             await _context.Products.InsertOneAsync(product);
+
+            // Add or update category in category table
+            var existingCategory = await _context.Categories.Find(c => c.Name == product.CategoryName).FirstOrDefaultAsync();
+            if (existingCategory == null)
+            {
+                // Create new category with default values
+                var newCategory = new Category
+                {
+                    Name = product.CategoryName,
+                    Description = "",
+                    ImageUrl = "",
+                    Status = "Active",
+                    DisplaySequence = 0,
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _context.Categories.InsertOneAsync(newCategory);
+            }
+
             return Ok(new { message = "Product created successfully", product });
         }
 
@@ -249,6 +424,139 @@ namespace BusinessPlatform.API.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateProduct(string id, [FromBody] Product product)
         {
+            // Get validation settings from MongoDB
+            var validationSettings = await _validationService.GetValidationSettingsAsync("Product");
+
+            // Validate using MongoDB settings
+            var errors = new Dictionary<string, List<string>>();
+
+            if (validationSettings.ContainsKey("name"))
+            {
+                var nameResult = _validationService.ValidateField("name", product.Name, validationSettings["name"]);
+                if (!nameResult.IsValid) errors["name"] = nameResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("description"))
+            {
+                var descriptionResult = _validationService.ValidateField("description", product.Description, validationSettings["description"]);
+                if (!descriptionResult.IsValid) errors["description"] = descriptionResult.Errors;
+            }
+            
+            if (validationSettings.ContainsKey("price"))
+            {
+                var priceResult = _validationService.ValidateField("price", product.Price, validationSettings["price"]);
+                if (!priceResult.IsValid) errors["price"] = priceResult.Errors;
+            }
+            
+            if (validationSettings.ContainsKey("stock"))
+            {
+                var stockResult = _validationService.ValidateField("stock", product.Stock, validationSettings["stock"]);
+                if (!stockResult.IsValid) errors["stock"] = stockResult.Errors;
+            }
+            
+            if (validationSettings.ContainsKey("seller"))
+            {
+                var sellerResult = _validationService.ValidateField("seller", product.Seller, validationSettings["seller"]);
+                if (!sellerResult.IsValid) errors["seller"] = sellerResult.Errors;
+            }
+            
+            if (validationSettings.ContainsKey("imageUrl"))
+            {
+                var imageUrlResult = _validationService.ValidateField("imageUrl", product.ImageUrl, validationSettings["imageUrl"]);
+                if (!imageUrlResult.IsValid) errors["imageUrl"] = imageUrlResult.Errors;
+            }
+            
+            if (validationSettings.ContainsKey("imageUrls"))
+            {
+                var imageUrlsResult = _validationService.ValidateField("imageUrls", product.ImageUrls?.Count ?? 0, validationSettings["imageUrls"]);
+                if (!imageUrlsResult.IsValid) errors["imageUrls"] = imageUrlsResult.Errors;
+            }
+            
+            if (validationSettings.ContainsKey("categoryName"))
+            {
+                // Skip backend validation for categoryName if it's provided
+                // Frontend handles the required validation
+                if (string.IsNullOrEmpty(product.CategoryName))
+                {
+                    errors["categoryName"] = new List<string> { "Category is required" };
+                }
+            }
+            
+            if (validationSettings.ContainsKey("status"))
+            {
+                var statusResult = _validationService.ValidateField("status", product.Status, validationSettings["status"]);
+                if (!statusResult.IsValid) errors["status"] = statusResult.Errors;
+            }
+            
+            if (validationSettings.ContainsKey("pros"))
+            {
+                var prosResult = _validationService.ValidateField("pros", product.Pros?.Count ?? 0, validationSettings["pros"]);
+                if (!prosResult.IsValid) errors["pros"] = prosResult.Errors;
+            }
+            
+            if (validationSettings.ContainsKey("cons"))
+            {
+                var consResult = _validationService.ValidateField("cons", product.Cons?.Count ?? 0, validationSettings["cons"]);
+                if (!consResult.IsValid) errors["cons"] = consResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("displaySequence"))
+            {
+                var displaySequenceResult = _validationService.ValidateField("displaySequence", product.DisplaySequence, validationSettings["displaySequence"]);
+                if (!displaySequenceResult.IsValid) errors["displaySequence"] = displaySequenceResult.Errors;
+            }
+
+            if (errors.Count > 0)
+            {
+                return BadRequest(new { message = "Validation failed", errors });
+            }
+
+            // Fallback to ModelState validation
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { message = "Validation failed", errors = ModelState });
+            }
+
+            // Additional validation for pros and cons item length
+            if (product.Pros != null)
+            {
+                foreach (var pro in product.Pros)
+                {
+                    if (pro.Length > 500)
+                    {
+                        return BadRequest(new { message = "Pro must not exceed 500 characters" });
+                    }
+                }
+            }
+
+            if (product.Cons != null)
+            {
+                foreach (var con in product.Cons)
+                {
+                    if (con.Length > 500)
+                    {
+                        return BadRequest(new { message = "Con must not exceed 500 characters" });
+                    }
+                }
+            }
+
+            // Validate image URLs - allow data URLs
+            if (!string.IsNullOrEmpty(product.ImageUrl) && !product.ImageUrl.StartsWith("data:") && !Uri.TryCreate(product.ImageUrl, UriKind.Absolute, out _))
+            {
+                return BadRequest(new { message = "Invalid primary image URL format" });
+            }
+
+            if (product.ImageUrls != null)
+            {
+                foreach (var url in product.ImageUrls)
+                {
+                    if (!string.IsNullOrEmpty(url) && !url.StartsWith("data:") && !Uri.TryCreate(url, UriKind.Absolute, out _))
+                    {
+                        return BadRequest(new { message = "Invalid secondary image URL format" });
+                    }
+                }
+            }
+
             product.Id = id;
             var result = await _context.Products.ReplaceOneAsync(p => p.Id == id, product);
             if (result.MatchedCount == 0)
@@ -274,14 +582,6 @@ namespace BusinessPlatform.API.Controllers
                 return NotFound(new { message = "Product not found" });
             }
 
-            // Check if there are any other products in the same category
-            var remainingProducts = await _context.Products.Find(p => p.CategoryName == product.CategoryName).CountDocumentsAsync();
-            if (remainingProducts == 0)
-            {
-                // Delete the category if no products remain
-                await _context.Categories.DeleteOneAsync(c => c.Name == product.CategoryName);
-            }
-
             return Ok(new { message = "Product deleted successfully" });
         }
 
@@ -298,14 +598,157 @@ namespace BusinessPlatform.API.Controllers
             return Ok(new { message = "Product status updated successfully" });
         }
 
+        // Shopping Categories CRUD
+        [HttpGet("categories")]
+        [Authorize]
+        public async Task<IActionResult> GetCategories()
+        {
+            var categories = await _context.Categories.Find(_ => true).ToListAsync();
+            var sortedCategories = categories.OrderBy(c => c.DisplaySequence).ToList();
+            return Ok(sortedCategories);
+        }
+
+        [HttpPost("categories")]
+        [Authorize]
+        public async Task<IActionResult> CreateCategory([FromBody] Category category)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { message = "Validation failed", errors = ModelState });
+            }
+
+            category.Id = null;
+            category.CreatedAt = DateTime.UtcNow;
+            await _context.Categories.InsertOneAsync(category);
+            return Ok(new { message = "Category created successfully", category });
+        }
+
+        [HttpPut("categories/{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateCategory(string id, [FromBody] Category category)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { message = "Validation failed", errors = ModelState });
+            }
+
+            category.Id = id;
+            var result = await _context.Categories.ReplaceOneAsync(c => c.Id == id, category);
+            if (result.MatchedCount == 0)
+            {
+                return NotFound(new { message = "Category not found" });
+            }
+            return Ok(new { message = "Category updated successfully" });
+        }
+
+        [HttpDelete("categories/{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteCategory(string id)
+        {
+            var category = await _context.Categories.Find(c => c.Id == id).FirstOrDefaultAsync();
+            if (category == null)
+            {
+                return NotFound(new { message = "Category not found" });
+            }
+
+            // Delete all products with this category name
+            await _context.Products.DeleteManyAsync(p => p.CategoryName == category.Name);
+
+            // Delete the category
+            var result = await _context.Categories.DeleteOneAsync(c => c.Id == id);
+            if (result.DeletedCount == 0)
+            {
+                return NotFound(new { message = "Category not found" });
+            }
+            return Ok(new { message = "Category and all its products deleted successfully" });
+        }
+
         // Ads CRUD
         [HttpPost("ads")]
         [Authorize]
         public async Task<IActionResult> CreateAd([FromBody] Advertisement ad)
         {
-            if (!ModelState.IsValid)
+            // Get validation settings from MongoDB
+            var validationSettings = await _validationService.GetValidationSettingsAsync("Advertisement");
+
+            // Validate using MongoDB settings
+            var errors = new Dictionary<string, List<string>>();
+
+            if (validationSettings.ContainsKey("title"))
             {
-                return BadRequest(new { message = "Validation failed", errors = ModelState });
+                var titleResult = _validationService.ValidateField("title", ad.Title, validationSettings["title"]);
+                if (!titleResult.IsValid) errors["title"] = titleResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("description"))
+            {
+                var descriptionResult = _validationService.ValidateField("description", ad.Description, validationSettings["description"]);
+                if (!descriptionResult.IsValid) errors["description"] = descriptionResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("price"))
+            {
+                var priceResult = _validationService.ValidateField("price", ad.Price, validationSettings["price"]);
+                if (!priceResult.IsValid) errors["price"] = priceResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("categoryName"))
+            {
+                var categoryNameResult = _validationService.ValidateField("categoryName", ad.CategoryName, validationSettings["categoryName"]);
+                if (!categoryNameResult.IsValid) errors["categoryName"] = categoryNameResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("location"))
+            {
+                var locationResult = _validationService.ValidateField("location", ad.Location, validationSettings["location"]);
+                if (!locationResult.IsValid) errors["location"] = locationResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("city"))
+            {
+                var cityResult = _validationService.ValidateField("city", ad.City, validationSettings["city"]);
+                if (!cityResult.IsValid) errors["city"] = cityResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("condition"))
+            {
+                var conditionResult = _validationService.ValidateField("condition", ad.Condition, validationSettings["condition"]);
+                if (!conditionResult.IsValid) errors["condition"] = conditionResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("sellerName"))
+            {
+                var sellerNameResult = _validationService.ValidateField("sellerName", ad.SellerName, validationSettings["sellerName"]);
+                if (!sellerNameResult.IsValid) errors["sellerName"] = sellerNameResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("sellerPhone"))
+            {
+                var sellerPhoneResult = _validationService.ValidateField("sellerPhone", ad.SellerPhone, validationSettings["sellerPhone"]);
+                if (!sellerPhoneResult.IsValid) errors["sellerPhone"] = sellerPhoneResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("sellerEmail"))
+            {
+                var sellerEmailResult = _validationService.ValidateField("sellerEmail", ad.SellerEmail, validationSettings["sellerEmail"]);
+                if (!sellerEmailResult.IsValid) errors["sellerEmail"] = sellerEmailResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("imageUrl"))
+            {
+                var imageUrlResult = _validationService.ValidateField("imageUrl", ad.ImageUrl, validationSettings["imageUrl"]);
+                if (!imageUrlResult.IsValid) errors["imageUrl"] = imageUrlResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("status"))
+            {
+                var statusResult = _validationService.ValidateField("status", ad.Status, validationSettings["status"]);
+                if (!statusResult.IsValid) errors["status"] = statusResult.Errors;
+            }
+
+            if (errors.Count > 0)
+            {
+                return BadRequest(new { message = "Validation failed", errors });
             }
 
             // Additional validation for image URLs - allow data URLs
@@ -336,9 +779,87 @@ namespace BusinessPlatform.API.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateAd(string id, [FromBody] Advertisement ad)
         {
-            if (!ModelState.IsValid)
+            // Get validation settings from MongoDB
+            var validationSettings = await _validationService.GetValidationSettingsAsync("Advertisement");
+
+            // Validate using MongoDB settings
+            var errors = new Dictionary<string, List<string>>();
+
+            if (validationSettings.ContainsKey("title"))
             {
-                return BadRequest(new { message = "Validation failed", errors = ModelState });
+                var titleResult = _validationService.ValidateField("title", ad.Title, validationSettings["title"]);
+                if (!titleResult.IsValid) errors["title"] = titleResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("description"))
+            {
+                var descriptionResult = _validationService.ValidateField("description", ad.Description, validationSettings["description"]);
+                if (!descriptionResult.IsValid) errors["description"] = descriptionResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("price"))
+            {
+                var priceResult = _validationService.ValidateField("price", ad.Price, validationSettings["price"]);
+                if (!priceResult.IsValid) errors["price"] = priceResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("categoryName"))
+            {
+                var categoryNameResult = _validationService.ValidateField("categoryName", ad.CategoryName, validationSettings["categoryName"]);
+                if (!categoryNameResult.IsValid) errors["categoryName"] = categoryNameResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("location"))
+            {
+                var locationResult = _validationService.ValidateField("location", ad.Location, validationSettings["location"]);
+                if (!locationResult.IsValid) errors["location"] = locationResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("city"))
+            {
+                var cityResult = _validationService.ValidateField("city", ad.City, validationSettings["city"]);
+                if (!cityResult.IsValid) errors["city"] = cityResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("condition"))
+            {
+                var conditionResult = _validationService.ValidateField("condition", ad.Condition, validationSettings["condition"]);
+                if (!conditionResult.IsValid) errors["condition"] = conditionResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("sellerName"))
+            {
+                var sellerNameResult = _validationService.ValidateField("sellerName", ad.SellerName, validationSettings["sellerName"]);
+                if (!sellerNameResult.IsValid) errors["sellerName"] = sellerNameResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("sellerPhone"))
+            {
+                var sellerPhoneResult = _validationService.ValidateField("sellerPhone", ad.SellerPhone, validationSettings["sellerPhone"]);
+                if (!sellerPhoneResult.IsValid) errors["sellerPhone"] = sellerPhoneResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("sellerEmail"))
+            {
+                var sellerEmailResult = _validationService.ValidateField("sellerEmail", ad.SellerEmail, validationSettings["sellerEmail"]);
+                if (!sellerEmailResult.IsValid) errors["sellerEmail"] = sellerEmailResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("imageUrl"))
+            {
+                var imageUrlResult = _validationService.ValidateField("imageUrl", ad.ImageUrl, validationSettings["imageUrl"]);
+                if (!imageUrlResult.IsValid) errors["imageUrl"] = imageUrlResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("status"))
+            {
+                var statusResult = _validationService.ValidateField("status", ad.Status, validationSettings["status"]);
+                if (!statusResult.IsValid) errors["status"] = statusResult.Errors;
+            }
+
+            if (errors.Count > 0)
+            {
+                return BadRequest(new { message = "Validation failed", errors });
             }
 
             // Additional validation for image URLs - allow data URLs
@@ -434,6 +955,65 @@ namespace BusinessPlatform.API.Controllers
         [Authorize]
         public async Task<IActionResult> CreateJob([FromBody] Job job)
         {
+            // Get validation settings from MongoDB
+            var validationSettings = await _validationService.GetValidationSettingsAsync("Job");
+
+            // Validate using MongoDB settings
+            var errors = new Dictionary<string, List<string>>();
+
+            if (validationSettings.ContainsKey("title"))
+            {
+                var titleResult = _validationService.ValidateField("title", job.Title, validationSettings["title"]);
+                if (!titleResult.IsValid) errors["title"] = titleResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("company"))
+            {
+                var companyResult = _validationService.ValidateField("company", job.Company, validationSettings["company"]);
+                if (!companyResult.IsValid) errors["company"] = companyResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("location"))
+            {
+                var locationResult = _validationService.ValidateField("location", job.Location, validationSettings["location"]);
+                if (!locationResult.IsValid) errors["location"] = locationResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("salary"))
+            {
+                var salaryResult = _validationService.ValidateField("salary", job.Salary, validationSettings["salary"]);
+                if (!salaryResult.IsValid) errors["salary"] = salaryResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("type"))
+            {
+                var typeResult = _validationService.ValidateField("type", job.Type, validationSettings["type"]);
+                if (!typeResult.IsValid) errors["type"] = typeResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("description"))
+            {
+                var descriptionResult = _validationService.ValidateField("description", job.Description, validationSettings["description"]);
+                if (!descriptionResult.IsValid) errors["description"] = descriptionResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("skills"))
+            {
+                var skillsResult = _validationService.ValidateField("skills", job.Skills?.Count ?? 0, validationSettings["skills"]);
+                if (!skillsResult.IsValid) errors["skills"] = skillsResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("status"))
+            {
+                var statusResult = _validationService.ValidateField("status", job.Status, validationSettings["status"]);
+                if (!statusResult.IsValid) errors["status"] = statusResult.Errors;
+            }
+
+            if (errors.Count > 0)
+            {
+                return BadRequest(new { message = "Validation failed", errors });
+            }
+
             job.Id = null;
             job.CreatedAt = DateTime.UtcNow;
             await _context.Jobs.InsertOneAsync(job);
@@ -444,6 +1024,65 @@ namespace BusinessPlatform.API.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateJob(string id, [FromBody] Job job)
         {
+            // Get validation settings from MongoDB
+            var validationSettings = await _validationService.GetValidationSettingsAsync("Job");
+
+            // Validate using MongoDB settings
+            var errors = new Dictionary<string, List<string>>();
+
+            if (validationSettings.ContainsKey("title"))
+            {
+                var titleResult = _validationService.ValidateField("title", job.Title, validationSettings["title"]);
+                if (!titleResult.IsValid) errors["title"] = titleResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("company"))
+            {
+                var companyResult = _validationService.ValidateField("company", job.Company, validationSettings["company"]);
+                if (!companyResult.IsValid) errors["company"] = companyResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("location"))
+            {
+                var locationResult = _validationService.ValidateField("location", job.Location, validationSettings["location"]);
+                if (!locationResult.IsValid) errors["location"] = locationResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("salary"))
+            {
+                var salaryResult = _validationService.ValidateField("salary", job.Salary, validationSettings["salary"]);
+                if (!salaryResult.IsValid) errors["salary"] = salaryResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("type"))
+            {
+                var typeResult = _validationService.ValidateField("type", job.Type, validationSettings["type"]);
+                if (!typeResult.IsValid) errors["type"] = typeResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("description"))
+            {
+                var descriptionResult = _validationService.ValidateField("description", job.Description, validationSettings["description"]);
+                if (!descriptionResult.IsValid) errors["description"] = descriptionResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("skills"))
+            {
+                var skillsResult = _validationService.ValidateField("skills", job.Skills?.Count ?? 0, validationSettings["skills"]);
+                if (!skillsResult.IsValid) errors["skills"] = skillsResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("status"))
+            {
+                var statusResult = _validationService.ValidateField("status", job.Status, validationSettings["status"]);
+                if (!statusResult.IsValid) errors["status"] = statusResult.Errors;
+            }
+
+            if (errors.Count > 0)
+            {
+                return BadRequest(new { message = "Validation failed", errors });
+            }
+
             job.Id = id;
             var result = await _context.Jobs.ReplaceOneAsync(j => j.Id == id, job);
             if (result.MatchedCount == 0)
@@ -483,6 +1122,53 @@ namespace BusinessPlatform.API.Controllers
         [Authorize]
         public async Task<IActionResult> CreateTransport([FromBody] Transport transport)
         {
+            // Get validation settings from MongoDB
+            var validationSettings = await _validationService.GetValidationSettingsAsync("Transport");
+
+            // Validate using MongoDB settings
+            var errors = new Dictionary<string, List<string>>();
+
+            if (validationSettings.ContainsKey("type"))
+            {
+                var typeResult = _validationService.ValidateField("type", transport.Type, validationSettings["type"]);
+                if (!typeResult.IsValid) errors["type"] = typeResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("name"))
+            {
+                var nameResult = _validationService.ValidateField("name", transport.Name, validationSettings["name"]);
+                if (!nameResult.IsValid) errors["name"] = nameResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("source"))
+            {
+                var sourceResult = _validationService.ValidateField("source", transport.Source, validationSettings["source"]);
+                if (!sourceResult.IsValid) errors["source"] = sourceResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("destination"))
+            {
+                var destinationResult = _validationService.ValidateField("destination", transport.Destination, validationSettings["destination"]);
+                if (!destinationResult.IsValid) errors["destination"] = destinationResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("price"))
+            {
+                var priceResult = _validationService.ValidateField("price", transport.Price, validationSettings["price"]);
+                if (!priceResult.IsValid) errors["price"] = priceResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("status"))
+            {
+                var statusResult = _validationService.ValidateField("status", transport.Status, validationSettings["status"]);
+                if (!statusResult.IsValid) errors["status"] = statusResult.Errors;
+            }
+
+            if (errors.Count > 0)
+            {
+                return BadRequest(new { message = "Validation failed", errors });
+            }
+
             transport.Id = null;
             transport.CreatedAt = DateTime.UtcNow;
             await _context.Transports.InsertOneAsync(transport);
@@ -493,6 +1179,53 @@ namespace BusinessPlatform.API.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateTransport(string id, [FromBody] Transport transport)
         {
+            // Get validation settings from MongoDB
+            var validationSettings = await _validationService.GetValidationSettingsAsync("Transport");
+
+            // Validate using MongoDB settings
+            var errors = new Dictionary<string, List<string>>();
+
+            if (validationSettings.ContainsKey("type"))
+            {
+                var typeResult = _validationService.ValidateField("type", transport.Type, validationSettings["type"]);
+                if (!typeResult.IsValid) errors["type"] = typeResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("name"))
+            {
+                var nameResult = _validationService.ValidateField("name", transport.Name, validationSettings["name"]);
+                if (!nameResult.IsValid) errors["name"] = nameResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("source"))
+            {
+                var sourceResult = _validationService.ValidateField("source", transport.Source, validationSettings["source"]);
+                if (!sourceResult.IsValid) errors["source"] = sourceResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("destination"))
+            {
+                var destinationResult = _validationService.ValidateField("destination", transport.Destination, validationSettings["destination"]);
+                if (!destinationResult.IsValid) errors["destination"] = destinationResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("price"))
+            {
+                var priceResult = _validationService.ValidateField("price", transport.Price, validationSettings["price"]);
+                if (!priceResult.IsValid) errors["price"] = priceResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("status"))
+            {
+                var statusResult = _validationService.ValidateField("status", transport.Status, validationSettings["status"]);
+                if (!statusResult.IsValid) errors["status"] = statusResult.Errors;
+            }
+
+            if (errors.Count > 0)
+            {
+                return BadRequest(new { message = "Validation failed", errors });
+            }
+
             transport.Id = id;
             var result = await _context.Transports.ReplaceOneAsync(t => t.Id == id, transport);
             if (result.MatchedCount == 0)
@@ -532,6 +1265,53 @@ namespace BusinessPlatform.API.Controllers
         [Authorize]
         public async Task<IActionResult> CreatePackage([FromBody] TravelPackage package)
         {
+            // Get validation settings from MongoDB
+            var validationSettings = await _validationService.GetValidationSettingsAsync("TravelPackage");
+
+            // Validate using MongoDB settings
+            var errors = new Dictionary<string, List<string>>();
+
+            if (validationSettings.ContainsKey("name"))
+            {
+                var nameResult = _validationService.ValidateField("name", package.Name, validationSettings["name"]);
+                if (!nameResult.IsValid) errors["name"] = nameResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("description"))
+            {
+                var descriptionResult = _validationService.ValidateField("description", package.Description, validationSettings["description"]);
+                if (!descriptionResult.IsValid) errors["description"] = descriptionResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("duration"))
+            {
+                var durationResult = _validationService.ValidateField("duration", package.Duration, validationSettings["duration"]);
+                if (!durationResult.IsValid) errors["duration"] = durationResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("price"))
+            {
+                var priceResult = _validationService.ValidateField("price", package.Price, validationSettings["price"]);
+                if (!priceResult.IsValid) errors["price"] = priceResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("imageUrl"))
+            {
+                var imageUrlResult = _validationService.ValidateField("imageUrl", package.ImageUrl, validationSettings["imageUrl"]);
+                if (!imageUrlResult.IsValid) errors["imageUrl"] = imageUrlResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("status"))
+            {
+                var statusResult = _validationService.ValidateField("status", package.Status, validationSettings["status"]);
+                if (!statusResult.IsValid) errors["status"] = statusResult.Errors;
+            }
+
+            if (errors.Count > 0)
+            {
+                return BadRequest(new { message = "Validation failed", errors });
+            }
+
             package.Id = null;
             package.CreatedAt = DateTime.UtcNow;
             await _context.TravelPackages.InsertOneAsync(package);
@@ -542,6 +1322,53 @@ namespace BusinessPlatform.API.Controllers
         [Authorize]
         public async Task<IActionResult> UpdatePackage(string id, [FromBody] TravelPackage package)
         {
+            // Get validation settings from MongoDB
+            var validationSettings = await _validationService.GetValidationSettingsAsync("TravelPackage");
+
+            // Validate using MongoDB settings
+            var errors = new Dictionary<string, List<string>>();
+
+            if (validationSettings.ContainsKey("name"))
+            {
+                var nameResult = _validationService.ValidateField("name", package.Name, validationSettings["name"]);
+                if (!nameResult.IsValid) errors["name"] = nameResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("description"))
+            {
+                var descriptionResult = _validationService.ValidateField("description", package.Description, validationSettings["description"]);
+                if (!descriptionResult.IsValid) errors["description"] = descriptionResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("duration"))
+            {
+                var durationResult = _validationService.ValidateField("duration", package.Duration, validationSettings["duration"]);
+                if (!durationResult.IsValid) errors["duration"] = durationResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("price"))
+            {
+                var priceResult = _validationService.ValidateField("price", package.Price, validationSettings["price"]);
+                if (!priceResult.IsValid) errors["price"] = priceResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("imageUrl"))
+            {
+                var imageUrlResult = _validationService.ValidateField("imageUrl", package.ImageUrl, validationSettings["imageUrl"]);
+                if (!imageUrlResult.IsValid) errors["imageUrl"] = imageUrlResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("status"))
+            {
+                var statusResult = _validationService.ValidateField("status", package.Status, validationSettings["status"]);
+                if (!statusResult.IsValid) errors["status"] = statusResult.Errors;
+            }
+
+            if (errors.Count > 0)
+            {
+                return BadRequest(new { message = "Validation failed", errors });
+            }
+
             package.Id = id;
             var result = await _context.TravelPackages.ReplaceOneAsync(p => p.Id == id, package);
             if (result.MatchedCount == 0)
@@ -581,6 +1408,59 @@ namespace BusinessPlatform.API.Controllers
         [Authorize]
         public async Task<IActionResult> CreateMovie([FromBody] Movie movie)
         {
+            // Get validation settings from MongoDB
+            var validationSettings = await _validationService.GetValidationSettingsAsync("Movie");
+
+            // Validate using MongoDB settings
+            var errors = new Dictionary<string, List<string>>();
+
+            if (validationSettings.ContainsKey("title"))
+            {
+                var titleResult = _validationService.ValidateField("title", movie.Title, validationSettings["title"]);
+                if (!titleResult.IsValid) errors["title"] = titleResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("genre"))
+            {
+                var genreResult = _validationService.ValidateField("genre", movie.Genre, validationSettings["genre"]);
+                if (!genreResult.IsValid) errors["genre"] = genreResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("language"))
+            {
+                var languageResult = _validationService.ValidateField("language", movie.Language, validationSettings["language"]);
+                if (!languageResult.IsValid) errors["language"] = languageResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("duration"))
+            {
+                var durationResult = _validationService.ValidateField("duration", movie.Duration, validationSettings["duration"]);
+                if (!durationResult.IsValid) errors["duration"] = durationResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("rating"))
+            {
+                var ratingResult = _validationService.ValidateField("rating", movie.Rating, validationSettings["rating"]);
+                if (!ratingResult.IsValid) errors["rating"] = ratingResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("imageUrl"))
+            {
+                var imageUrlResult = _validationService.ValidateField("imageUrl", movie.ImageUrl, validationSettings["imageUrl"]);
+                if (!imageUrlResult.IsValid) errors["imageUrl"] = imageUrlResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("status"))
+            {
+                var statusResult = _validationService.ValidateField("status", movie.Status, validationSettings["status"]);
+                if (!statusResult.IsValid) errors["status"] = statusResult.Errors;
+            }
+
+            if (errors.Count > 0)
+            {
+                return BadRequest(new { message = "Validation failed", errors });
+            }
+
             movie.Id = null;
             movie.CreatedAt = DateTime.UtcNow;
             await _context.Movies.InsertOneAsync(movie);
@@ -591,6 +1471,59 @@ namespace BusinessPlatform.API.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateMovie(string id, [FromBody] Movie movie)
         {
+            // Get validation settings from MongoDB
+            var validationSettings = await _validationService.GetValidationSettingsAsync("Movie");
+
+            // Validate using MongoDB settings
+            var errors = new Dictionary<string, List<string>>();
+
+            if (validationSettings.ContainsKey("title"))
+            {
+                var titleResult = _validationService.ValidateField("title", movie.Title, validationSettings["title"]);
+                if (!titleResult.IsValid) errors["title"] = titleResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("genre"))
+            {
+                var genreResult = _validationService.ValidateField("genre", movie.Genre, validationSettings["genre"]);
+                if (!genreResult.IsValid) errors["genre"] = genreResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("language"))
+            {
+                var languageResult = _validationService.ValidateField("language", movie.Language, validationSettings["language"]);
+                if (!languageResult.IsValid) errors["language"] = languageResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("duration"))
+            {
+                var durationResult = _validationService.ValidateField("duration", movie.Duration, validationSettings["duration"]);
+                if (!durationResult.IsValid) errors["duration"] = durationResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("rating"))
+            {
+                var ratingResult = _validationService.ValidateField("rating", movie.Rating, validationSettings["rating"]);
+                if (!ratingResult.IsValid) errors["rating"] = ratingResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("imageUrl"))
+            {
+                var imageUrlResult = _validationService.ValidateField("imageUrl", movie.ImageUrl, validationSettings["imageUrl"]);
+                if (!imageUrlResult.IsValid) errors["imageUrl"] = imageUrlResult.Errors;
+            }
+
+            if (validationSettings.ContainsKey("status"))
+            {
+                var statusResult = _validationService.ValidateField("status", movie.Status, validationSettings["status"]);
+                if (!statusResult.IsValid) errors["status"] = statusResult.Errors;
+            }
+
+            if (errors.Count > 0)
+            {
+                return BadRequest(new { message = "Validation failed", errors });
+            }
+
             movie.Id = id;
             var result = await _context.Movies.ReplaceOneAsync(m => m.Id == id, movie);
             if (result.MatchedCount == 0)
@@ -668,6 +1601,44 @@ namespace BusinessPlatform.API.Controllers
                 return NotFound(new { message = "User not found" });
             }
             return Ok(new { message = "User status updated successfully" });
+        }
+
+        // Validation Settings Management
+        [HttpGet("validation-settings/{entityType}")]
+        [Authorize]
+        public async Task<IActionResult> GetValidationSettings(string entityType)
+        {
+            var settings = await _context.ValidationSettings
+                .Find(v => v.EntityType == entityType && v.IsActive)
+                .ToListAsync();
+            return Ok(settings);
+        }
+
+        [HttpPost("validation-settings")]
+        [Authorize]
+        public async Task<IActionResult> CreateValidationSetting([FromBody] ValidationSetting setting)
+        {
+            setting.Id = null;
+            setting.CreatedAt = DateTime.UtcNow;
+            setting.UpdatedAt = DateTime.UtcNow;
+            await _context.ValidationSettings.InsertOneAsync(setting);
+            _validationService.InvalidateCache(setting.EntityType);
+            return Ok(new { message = "Validation setting created successfully", setting });
+        }
+
+        [HttpPut("validation-settings/{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateValidationSetting(string id, [FromBody] ValidationSetting setting)
+        {
+            setting.Id = id;
+            setting.UpdatedAt = DateTime.UtcNow;
+            var result = await _context.ValidationSettings.ReplaceOneAsync(v => v.Id == id, setting);
+            if (result.MatchedCount == 0)
+            {
+                return NotFound(new { message = "Validation setting not found" });
+            }
+            _validationService.InvalidateCache(setting.EntityType);
+            return Ok(new { message = "Validation setting updated successfully", setting });
         }
     }
 
