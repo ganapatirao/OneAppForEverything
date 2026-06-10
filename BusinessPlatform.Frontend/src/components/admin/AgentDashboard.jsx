@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Eye, X, Search, Filter, Star, Zap, Shield, TrendingUp, Calendar, MapPin, Phone, Mail, CheckCircle, XCircle, Clock } from 'lucide-react';
-import { advertisingApi } from '../services/api';
+import { advertisingApi } from '../../services/api';
 
 export default function AgentDashboard() {
   const [ads, setAds] = useState([]);

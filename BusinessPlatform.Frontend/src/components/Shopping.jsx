@@ -23,20 +23,24 @@ export default function Shopping({ onCartChange }) {
   const [reviewProduct, setReviewProduct] = useState(null);
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [expandedDescriptions, setExpandedDescriptions] = useState({});
+  const [expandedOrders, setExpandedOrders] = useState({});
 
 
 
   useEffect(() => {
 
-    loadProducts();
-
     loadCategories();
-
     loadCart();
-
     loadOrders();
 
   }, []);
+
+  useEffect(() => {
+    if (categories.length > 0) {
+      loadProducts();
+    }
+  }, [categories]);
 
 
 
@@ -46,14 +50,8 @@ export default function Shopping({ onCartChange }) {
 
       const response = await shoppingApi.getProducts();
 
-      // Sort products by displaySequence (0 values appear last)
-      const sortedProducts = response.data
-        .filter(p => p.status === 'Active')
-        .sort((a, b) => {
-          const seqA = a.displaySequence === 0 || a.displaySequence === undefined ? Number.MAX_SAFE_INTEGER : a.displaySequence;
-          const seqB = b.displaySequence === 0 || b.displaySequence === undefined ? Number.MAX_SAFE_INTEGER : b.displaySequence;
-          return seqA - seqB;
-        });
+      // Backend already sorts by category sequence then product sequence
+      const sortedProducts = response.data.filter(p => p.status === 'Active');
 
       setProducts(sortedProducts);
 
@@ -315,9 +313,13 @@ export default function Shopping({ onCartChange }) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
 
-          {filteredProducts.map((product) => (
+          {filteredProducts.map((product) => {
 
-            <div key={product.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden">
+            const isExpanded = expandedDescriptions[product.id];
+            const shortDesc = product.description.length > 100 ? product.description.substring(0, 100) + '...' : product.description;
+
+            return (
+            <div key={product.id} className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100">
 
               <img
 
@@ -325,7 +327,7 @@ export default function Shopping({ onCartChange }) {
 
                 alt={product.name}
 
-                className="w-full h-48 object-cover cursor-pointer"
+                className="w-full h-48 object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
 
                 onClick={() => setSelectedProduct(product)}
 
@@ -333,13 +335,25 @@ export default function Shopping({ onCartChange }) {
 
               <div className="p-4">
 
-                <h3 className="font-semibold text-gray-800 mb-2">{product.name}</h3>
+                <h3 className="font-bold text-gray-800 mb-2 text-lg">{product.name}</h3>
 
-                <p className="text-sm text-gray-600 mb-2 line-clamp-2">{product.description}</p>
+                <div className="mb-3">
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    {isExpanded ? product.description : shortDesc}
+                  </p>
+                  {product.description.length > 100 && (
+                    <button
+                      onClick={() => setExpandedDescriptions(prev => ({ ...prev, [product.id]: !prev[product.id] }))}
+                      className="text-blue-600 text-xs font-semibold mt-1 hover:text-blue-800 transition-colors"
+                    >
+                      {isExpanded ? 'Show Less' : 'Read More'}
+                    </button>
+                  )}
+                </div>
 
                 <button
                   onClick={() => setReviewProduct(product)}
-                  className="flex items-center mb-2 hover:text-blue-600 transition-colors"
+                  className="flex items-center mb-3 hover:text-blue-600 transition-colors"
                 >
                   {renderStars(product.rating)}
                   <span className="ml-1 text-sm text-gray-600 hover:text-blue-600">{product.rating} ({getReviewCount(product)} reviews)</span>
@@ -347,13 +361,13 @@ export default function Shopping({ onCartChange }) {
 
                 <div className="flex justify-between items-center">
 
-                  <p className="text-lg font-bold text-blue-600">{formatPrice(product.price)}</p>
+                  <p className="text-xl font-bold text-green-600">{formatPrice(product.price)}</p>
 
                   <button
 
                     onClick={() => handleAddToCart(product)}
 
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-5 py-2.5 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md hover:shadow-lg font-semibold"
 
                   >
 
@@ -366,8 +380,8 @@ export default function Shopping({ onCartChange }) {
               </div>
 
             </div>
-
-          ))}
+            );
+          })}
 
         </div>
 
@@ -403,37 +417,105 @@ export default function Shopping({ onCartChange }) {
 
                 <tbody>
 
-                  {orders.map((order) => (
+                  {orders.map((order) => {
 
-                    <tr key={order.id} className="hover:bg-gray-50">
+                    const isExpanded = expandedOrders[order.id];
 
-                      <td className="px-4 py-3 text-sm text-gray-800">{order.id.substring(0, 8)}...</td>
+                    return (
 
-                      <td className="px-4 py-3 text-sm text-gray-800">{formatPrice(order.total)}</td>
+                    <React.Fragment key={order.id}>
 
-                      <td className="px-4 py-3">
+                      <tr className="hover:bg-gray-50 cursor-pointer" onClick={() => setExpandedOrders(prev => ({ ...prev, [order.id]: !prev[order.id] }))}>
 
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        <td className="px-4 py-3 text-sm text-gray-800">{order.id.substring(0, 8)}...</td>
 
-                          order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
+                        <td className="px-4 py-3 text-sm text-gray-800">{formatPrice(order.total)}</td>
 
-                          order.status === 'Shipped' ? 'bg-yellow-100 text-yellow-800' :
+                        <td className="px-4 py-3">
 
-                          'bg-blue-100 text-blue-800'
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
 
-                        }`}>
+                            order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
 
-                          {order.status}
+                            order.status === 'Shipped' ? 'bg-yellow-100 text-yellow-800' :
 
-                        </span>
+                            'bg-blue-100 text-blue-800'
 
-                      </td>
+                          }`}>
 
-                      <td className="px-4 py-3 text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</td>
+                            {order.status}
 
-                    </tr>
+                          </span>
 
-                  ))}
+                        </td>
+
+                        <td className="px-4 py-3 text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</td>
+
+                      </tr>
+
+                      {isExpanded && (
+
+                        <tr>
+
+                          <td colSpan="4" className="px-4 py-4 bg-gray-50">
+
+                            <div className="space-y-3">
+
+                              <div>
+
+                                <span className="font-semibold text-gray-700">Items:</span>
+
+                                <div className="mt-2 space-y-2">
+
+                                  {order.items && order.items.map((item, idx) => (
+
+                                    <div key={idx} className="flex justify-between text-sm text-gray-600">
+
+                                      <span>{item.productName} x {item.quantity}</span>
+
+                                      <span>{formatPrice(item.price * item.quantity)}</span>
+
+                                    </div>
+
+                                  ))}
+
+                                </div>
+
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+
+                                <div>
+
+                                  <span className="font-semibold text-gray-700">Shipping Address:</span>
+
+                                  <p className="text-gray-600">{order.shippingAddress || '-'}</p>
+
+                                </div>
+
+                                <div>
+
+                                  <span className="font-semibold text-gray-700">Payment Method:</span>
+
+                                  <p className="text-gray-600">{order.paymentMethod || '-'}</p>
+
+                                </div>
+
+                              </div>
+
+                            </div>
+
+                          </td>
+
+                        </tr>
+
+                      )}
+
+                    </React.Fragment>
+
+                    );
+
+                  })}
 
                 </tbody>
 
@@ -453,9 +535,9 @@ export default function Shopping({ onCartChange }) {
 
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
 
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
 
-              <div className="relative">
+              <div className="relative flex-shrink-0">
                 <button
                   onClick={() => setSelectedProduct(null)}
                   className="absolute top-4 right-4 z-10 bg-white rounded-full p-2 shadow-md hover:bg-gray-100"
@@ -500,7 +582,7 @@ export default function Shopping({ onCartChange }) {
                 })()}
               </div>
 
-              <div className="p-6">
+              <div className="p-6 overflow-y-auto flex-1">
 
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">{selectedProduct.name}</h2>
 
@@ -518,7 +600,7 @@ export default function Shopping({ onCartChange }) {
 
                   <p className="text-sm text-gray-500 mb-1">Price</p>
 
-                  <p className="text-2xl font-bold text-blue-600">{formatPrice(selectedProduct.price)}</p>
+                  <p className="text-2xl font-bold text-green-600">{formatPrice(selectedProduct.price)}</p>
 
                 </div>
 

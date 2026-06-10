@@ -21,7 +21,18 @@ namespace BusinessPlatform.API.Controllers
         public async Task<IActionResult> GetProducts()
         {
             var products = await _context.Products.Find(_ => true).ToListAsync();
-            var sortedProducts = products.OrderBy(p => p.DisplaySequence).ToList();
+            var categories = await _context.Categories.Find(_ => true).ToListAsync();
+            
+            var sortedProducts = products
+                .Join(categories, 
+                    p => p.CategoryName, 
+                    c => c.Name, 
+                    (p, c) => new { Product = p, Category = c })
+                .OrderBy(x => x.Category.DisplaySequence)
+                .ThenBy(x => x.Product.DisplaySequence)
+                .Select(x => x.Product)
+                .ToList();
+            
             return Ok(sortedProducts);
         }
 

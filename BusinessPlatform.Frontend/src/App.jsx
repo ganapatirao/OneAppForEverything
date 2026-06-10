@@ -6,8 +6,8 @@ import Shopping from './components/Shopping';
 import Advertising from './components/Advertising';
 import Recruitment from './components/Recruitment';
 import Booking from './components/Booking';
-import AdminDashboard from './components/AdminDashboard';
-import AgentDashboard from './components/AgentDashboard';
+import AdminDashboard from './components/admin/AdminDashboard';
+import AgentDashboard from './components/admin/AgentDashboard';
 import Login from './components/Login';
 import Register from './components/Register';
 import PasswordReset from './components/PasswordReset';
@@ -204,14 +204,16 @@ function App() {
       {/* Cart Modal */}
       {showCartModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b sticky top-0 bg-white flex justify-between items-center">
+          <div className="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto flex flex-col">
+            <div className="p-6 border-b sticky top-0 bg-white flex justify-between items-center relative z-20">
               <h2 className="text-2xl font-bold text-gray-800">Shopping Cart</h2>
-              <button onClick={() => setShowCartModal(false)} className="text-gray-500 hover:text-gray-700">
+              <button onClick={() => setShowCartModal(false)} className="relative z-30 text-gray-500 hover:text-gray-700 text-2xl font-bold px-2 py-1 hover:bg-gray-100 rounded transition-colors">
                 ✕
               </button>
             </div>
-            <Cart onCartChange={refreshCart} onProceedToCheckout={handleProceedToCheckout} />
+            <div className="flex-1 overflow-y-auto">
+              <Cart onCartChange={refreshCart} onProceedToCheckout={handleProceedToCheckout} />
+            </div>
           </div>
         </div>
       )}

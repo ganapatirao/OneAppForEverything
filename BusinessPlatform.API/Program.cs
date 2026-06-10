@@ -1,9 +1,11 @@
 using BusinessPlatform.API.Services;
 using BusinessPlatform.API;
+using BusinessPlatform.API.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -79,8 +81,17 @@ var app = builder.Build();
 // Seed data on startup
 using (var scope = app.Services.CreateScope())
 {
-    var seedData = new SeedData(scope.ServiceProvider.GetRequiredService<MongoDbContext>());
+    var mongoDbContext = scope.ServiceProvider.GetRequiredService<MongoDbContext>();
+    var seedData = new SeedData(mongoDbContext);
     await seedData.SeedAsync();
+    
+    // Seed validation data
+    var validationSettings = await mongoDbContext.ValidationSettings.CountDocumentsAsync(Builders<BusinessPlatform.API.Models.ValidationSetting>.Filter.Empty);
+    if (validationSettings == 0)
+    {
+        var validationSeedData = BusinessPlatform.API.Data.ValidationSeedData.GetCheckoutValidationSettings();
+        await mongoDbContext.ValidationSettings.InsertManyAsync(validationSeedData);
+    }
 }
 
 // Configure the HTTP request pipeline.

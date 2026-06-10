@@ -61,19 +61,28 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-20">
-        <div className="max-w-7xl mx-auto px-4">
+      <section className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 text-white py-24 overflow-hidden">
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="absolute inset-0">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-300/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 relative z-10">
           <div className="text-center">
-            <h1 className="text-5xl font-bold mb-6">Welcome to Business Platform</h1>
-            <p className="text-xl mb-8 opacity-90">Your one-stop destination for Shopping, Advertising, Recruitment, and Booking</p>
-            <div className="flex justify-center space-x-4">
-              <Link to="/shopping" className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-                Start Shopping
+            <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent animate-fade-in">
+              Welcome to Business Platform
+            </h1>
+            <p className="text-2xl mb-10 opacity-90 font-light">Your one-stop destination for Shopping, Advertising, Recruitment, and Booking</p>
+            <div className="flex justify-center space-x-6">
+              <Link to="/shopping" className="bg-white text-blue-600 px-10 py-4 rounded-2xl font-bold hover:bg-blue-50 transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl flex items-center space-x-2">
+                <ShoppingCart size={24} />
+                <span>Start Shopping</span>
               </Link>
-              <Link to="/advertising" className="bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors">
-                Post an Ad
+              <Link to="/advertising" className="bg-transparent border-3 border-white text-white px-10 py-4 rounded-2xl font-bold hover:bg-white hover:text-blue-600 transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl flex items-center space-x-2">
+                <Briefcase size={24} />
+                <span>Post an Ad</span>
               </Link>
             </div>
           </div>
@@ -81,25 +90,31 @@ export default function HomePage() {
       </section>
 
       {/* Featured Products */}
-      <section className="py-16">
+      <section className="py-20">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-800">Featured Products</h2>
-            <Link to="/shopping" className="text-blue-600 hover:text-blue-700 flex items-center">
+          <div className="flex justify-between items-center mb-10">
+            <div>
+              <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Featured Products</h2>
+              <p className="text-gray-600 mt-2">Discover our handpicked selection</p>
+            </div>
+            <Link to="/shopping" className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center">
               View All <ArrowRight size={20} className="ml-2" />
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {products.map((product) => (
-              <div key={product.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden">
-                <img src={product.imageUrl} alt={product.name} className="w-full h-48 object-cover" />
-                <div className="p-4">
-                  <h3 className="font-semibold text-gray-800 mb-2">{product.name}</h3>
-                  <div className="flex items-center mb-2">
-                    <Star size={16} className="text-yellow-500 fill-current" />
-                    <span className="ml-1 text-sm text-gray-600">{product.rating} ({product.reviewCount})</span>
+              <div key={product.id} className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden group">
+                <div className="relative overflow-hidden">
+                  <img src={product.imageUrl} alt={product.name} className="w-full h-56 object-cover group-hover:scale-110 transition-transform duration-500" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </div>
+                <div className="p-6">
+                  <h3 className="font-bold text-gray-800 mb-3 text-lg line-clamp-2">{product.name}</h3>
+                  <div className="flex items-center mb-3">
+                    <Star size={18} className="text-yellow-500 fill-current" />
+                    <span className="ml-2 text-sm font-medium text-gray-600">{product.rating} ({product.reviewCount} reviews)</span>
                   </div>
-                  <p className="text-lg font-bold text-blue-600">{formatPrice(product.price)}</p>
+                  <p className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{formatPrice(product.price)}</p>
                 </div>
               </div>
             ))}
@@ -108,25 +123,31 @@ export default function HomePage() {
       </section>
 
       {/* Featured Ads */}
-      <section className="py-16 bg-white">
+      <section className="py-20 bg-gradient-to-br from-orange-50 via-yellow-50 to-amber-50">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-800">Featured Ads</h2>
-            <Link to="/advertising" className="text-blue-600 hover:text-blue-700 flex items-center">
+          <div className="flex justify-between items-center mb-10">
+            <div>
+              <h2 className="text-4xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">Featured Ads</h2>
+              <p className="text-gray-600 mt-2">Find what you're looking for</p>
+            </div>
+            <Link to="/advertising" className="bg-gradient-to-r from-orange-600 to-red-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-orange-700 hover:to-red-700 transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center">
               View All <ArrowRight size={20} className="ml-2" />
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {ads.map((ad) => (
-              <div key={ad.id} className="bg-gray-50 rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden">
-                <img src={ad.imageUrl} alt={ad.title} className="w-full h-48 object-cover" />
-                <div className="p-4">
-                  <h3 className="font-semibold text-gray-800 mb-2">{ad.title}</h3>
-                  <div className="flex items-center mb-2">
-                    <MapPin size={16} className="text-gray-500" />
-                    <span className="ml-1 text-sm text-gray-600">{ad.location}</span>
+              <div key={ad.id} className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden group">
+                <div className="relative overflow-hidden">
+                  <img src={ad.imageUrl} alt={ad.title} className="w-full h-56 object-cover group-hover:scale-110 transition-transform duration-500" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </div>
+                <div className="p-6">
+                  <h3 className="font-bold text-gray-800 mb-3 text-lg line-clamp-2">{ad.title}</h3>
+                  <div className="flex items-center mb-3">
+                    <MapPin size={18} className="text-orange-500" />
+                    <span className="ml-2 text-sm font-medium text-gray-600">{ad.location}</span>
                   </div>
-                  <p className="text-lg font-bold text-green-600">{formatPrice(ad.price)}</p>
+                  <p className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">{formatPrice(ad.price)}</p>
                 </div>
               </div>
             ))}
@@ -135,18 +156,21 @@ export default function HomePage() {
       </section>
 
       {/* Featured Jobs */}
-      <section className="py-16">
+      <section className="py-20">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-800">Featured Jobs</h2>
-            <Link to="/recruitment" className="text-blue-600 hover:text-blue-700 flex items-center">
+          <div className="flex justify-between items-center mb-10">
+            <div>
+              <h2 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">Featured Jobs</h2>
+              <p className="text-gray-600 mt-2">Discover your next career opportunity</p>
+            </div>
+            <Link to="/recruitment" className="bg-gradient-to-r from-green-600 to-teal-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-green-700 hover:to-teal-700 transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center">
               View All <ArrowRight size={20} className="ml-2" />
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {jobs.map((job) => (
-              <div key={job.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6">
-                <div className="flex items-center mb-3">
+              <div key={job.id} className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 p-6 group">
+                <div className="flex items-center mb-4">
                   <Briefcase size={24} className="text-blue-600" />
                   <h3 className="font-semibold text-gray-800 ml-2">{job.title}</h3>
                 </div>
@@ -163,31 +187,36 @@ export default function HomePage() {
       </section>
 
       {/* Transport Options */}
-      <section className="py-16 bg-white">
+      <section className="py-20 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-800">Transport Options</h2>
-            <Link to="/booking" className="text-blue-600 hover:text-blue-700 flex items-center">
+          <div className="flex justify-between items-center mb-10">
+            <div>
+              <h2 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Transport Options</h2>
+              <p className="text-gray-600 mt-2">Travel with comfort and style</p>
+            </div>
+            <Link to="/booking" className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center">
               View All <ArrowRight size={20} className="ml-2" />
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {transports.map((transport) => (
-              <div key={transport.id} className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg shadow-md hover:shadow-lg transition-shadow p-6">
+              <div key={transport.id} className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 p-6 group">
                 <div className="flex items-center mb-4">
-                  <Calendar size={32} className="text-blue-600" />
-                  <div className="ml-3">
-                    <h3 className="font-semibold text-gray-800">{transport.name}</h3>
+                  <div className="bg-gradient-to-br from-indigo-500 to-purple-500 p-3 rounded-xl">
+                    <Calendar size={28} className="text-white" />
+                  </div>
+                  <div className="ml-4">
+                    <h3 className="font-bold text-gray-800">{transport.name}</h3>
                     <p className="text-sm text-gray-600">{transport.type}</p>
                   </div>
                 </div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600">{transport.source}</span>
-                  <ArrowRight size={16} className="text-gray-400" />
-                  <span className="text-gray-600">{transport.destination}</span>
+                <div className="flex justify-between items-center mb-3 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-3">
+                  <span className="text-gray-700 font-medium">{transport.source}</span>
+                  <ArrowRight size={18} className="text-indigo-600" />
+                  <span className="text-gray-700 font-medium">{transport.destination}</span>
                 </div>
-                <p className="text-lg font-bold text-blue-600">{formatPrice(transport.price)}</p>
-                <p className="text-sm text-gray-500 mt-1">{transport.duration}</p>
+                <p className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">{formatPrice(transport.price)}</p>
+                <p className="text-sm text-gray-500 mt-2">{transport.duration}</p>
               </div>
             ))}
           </div>
@@ -195,25 +224,33 @@ export default function HomePage() {
       </section>
 
       {/* Travel Packages */}
-      <section className="py-16">
+      <section className="py-20">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-800">Travel Packages</h2>
-            <Link to="/booking" className="text-blue-600 hover:text-blue-700 flex items-center">
+          <div className="flex justify-between items-center mb-10">
+            <div>
+              <h2 className="text-4xl font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">Travel Packages</h2>
+              <p className="text-gray-600 mt-2">Explore amazing destinations</p>
+            </div>
+            <Link to="/booking" className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-cyan-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center">
               View All <ArrowRight size={20} className="ml-2" />
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {packages.map((pkg) => (
-              <div key={pkg.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden">
-                <img src={pkg.imageUrl} alt={pkg.name} className="w-full h-48 object-cover" />
-                <div className="p-4">
-                  <div className="flex items-center mb-2">
-                    <Plane size={20} className="text-purple-600" />
-                    <h3 className="font-semibold text-gray-800 ml-2">{pkg.name}</h3>
+              <div key={pkg.id} className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden group">
+                <div className="relative overflow-hidden">
+                  <img src={pkg.imageUrl} alt={pkg.name} className="w-full h-56 object-cover group-hover:scale-110 transition-transform duration-500" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </div>
+                <div className="p-6">
+                  <div className="flex items-center mb-3">
+                    <div className="bg-gradient-to-br from-cyan-500 to-blue-500 p-2 rounded-lg">
+                      <Plane size={20} className="text-white" />
+                    </div>
+                    <h3 className="font-bold text-gray-800 ml-3">{pkg.name}</h3>
                   </div>
-                  <p className="text-sm text-gray-600 mb-2">{pkg.duration}</p>
-                  <p className="text-lg font-bold text-purple-600">{formatPrice(pkg.price)}</p>
+                  <p className="text-sm text-gray-600 mb-3">{pkg.duration}</p>
+                  <p className="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">{formatPrice(pkg.price)}</p>
                 </div>
               </div>
             ))}
@@ -222,24 +259,36 @@ export default function HomePage() {
       </section>
 
       {/* Movies */}
-      <section className="py-16 bg-white">
+      <section className="py-20 bg-gradient-to-br from-rose-50 via-pink-50 to-red-50">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-800">Now Showing</h2>
-            <Link to="/booking" className="text-blue-600 hover:text-blue-700 flex items-center">
+          <div className="flex justify-between items-center mb-10">
+            <div>
+              <h2 className="text-4xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">Now Showing</h2>
+              <p className="text-gray-600 mt-2">Catch the latest blockbusters</p>
+            </div>
+            <Link to="/booking" className="bg-gradient-to-r from-rose-600 to-pink-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-rose-700 hover:to-pink-700 transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center">
               View All <ArrowRight size={20} className="ml-2" />
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {movies.map((movie) => (
-              <div key={movie.id} className="bg-gray-50 rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden">
-                <img src={movie.imageUrl} alt={movie.title} className="w-full h-64 object-cover" />
-                <div className="p-4">
-                  <h3 className="font-semibold text-gray-800 mb-2">{movie.title}</h3>
-                  <p className="text-sm text-gray-600 mb-2">{movie.genre} • {movie.language}</p>
+              <div key={movie.id} className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden group">
+                <div className="relative overflow-hidden">
+                  <img src={movie.imageUrl} alt={movie.title} className="w-full h-72 object-cover group-hover:scale-110 transition-transform duration-500" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                    <div className="flex items-center">
+                      <Star size={18} className="text-yellow-400 fill-current" />
+                      <span className="ml-2 text-white font-semibold">{movie.rating}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-6">
+                  <h3 className="font-bold text-gray-800 mb-2 text-lg line-clamp-2">{movie.title}</h3>
+                  <p className="text-sm text-gray-600 mb-3">{movie.genre} • {movie.language}</p>
                   <div className="flex items-center">
                     <Star size={16} className="text-yellow-500 fill-current" />
-                    <span className="ml-1 text-sm text-gray-600">{movie.rating}</span>
+                    <span className="ml-2 text-sm font-medium text-gray-600">{movie.rating}</span>
                   </div>
                 </div>
               </div>

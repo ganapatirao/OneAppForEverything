@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Filter, MapPin, MessageCircle, Phone, Search, Eye, Calendar, X, Star, ChevronLeft, ChevronRight, Briefcase, Car, Home, Smartphone, Heart, User, Shield, Zap, Tag } from 'lucide-react';
 import { advertisingApi } from '../services/api';
+import SubcategoryFilter from './SubcategoryFilter';
 
 export default function Advertising() {
   const [ads, setAds] = useState([]);
@@ -544,35 +545,12 @@ export default function Advertising() {
         </div>
 
         {/* Subcategory Filter */}
-        {selectedCategory !== 'All' && (
-          <div className="mb-6">
-            <div className="flex items-center space-x-2 overflow-x-auto pb-2">
-              <button
-                onClick={() => handleSubcategoryChange('All')}
-                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
-                  selectedSubcategory === 'All'
-                    ? 'bg-orange-100 text-orange-700 border border-orange-300'
-                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-                }`}
-              >
-                All Subcategories
-              </button>
-              {categories.find(c => c.name === selectedCategory)?.subcategories?.map((sub) => (
-                <button
-                  key={sub}
-                  onClick={() => handleSubcategoryChange(sub)}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
-                    selectedSubcategory === sub
-                      ? 'bg-orange-100 text-orange-700 border border-orange-300'
-                      : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-                  }`}
-                >
-                  {sub}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+        <SubcategoryFilter
+          selectedCategory={selectedCategory}
+          categories={categories}
+          selectedSubcategory={selectedSubcategory}
+          onSubcategoryChange={handleSubcategoryChange}
+        />
 
         {/* Results Count */}
         <div className="mb-4 flex justify-between items-center">

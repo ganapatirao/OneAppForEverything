@@ -118,14 +118,29 @@ export const adminApi = {
   getAllOrders: () => api.get('/admin/orders/all'),
   updateOrderStatus: (id, status) => api.put(`/admin/orders/${id}/status`, { status }),
   deleteOrder: (id) => api.delete(`/admin/orders/${id}`),
-  // Products
+  // Shopping Admin (Categories, Products, Orders)
+  getShoppingCategories: () => api.get('/admin/shopping/categories'),
+  getNextCategorySequence: () => api.get('/admin/shopping/categories/next-sequence'),
+  createShoppingCategory: (data) => api.post('/admin/shopping/categories', data),
+  updateShoppingCategory: (id, data) => api.put(`/admin/shopping/categories/${id}`, data),
+  deleteShoppingCategory: (id) => api.delete(`/admin/shopping/categories/${id}`),
+  getShoppingProducts: () => api.get('/admin/shopping/products'),
+  getNextProductSequence: (categoryName) => api.get(`/admin/shopping/products/next-sequence/${categoryName}`),
+  createShoppingProduct: (data) => api.post('/admin/shopping/products', data),
+  updateShoppingProduct: (id, data) => api.put(`/admin/shopping/products/${id}`, data),
+  deleteShoppingProduct: (id) => api.delete(`/admin/shopping/products/${id}`),
+  updateShoppingProductStatus: (id, status) => api.patch(`/admin/shopping/products/${id}/status`, { status }),
+  getShoppingOrders: () => api.get('/admin/shopping/orders'),
+  updateShoppingOrderStatus: (id, status) => api.put(`/admin/shopping/orders/${id}/status`, { status }),
+  deleteShoppingOrder: (id) => api.delete(`/admin/shopping/orders/${id}`),
+  // Products (deprecated - use shopping endpoints)
   getProducts: () => api.get('/admin/products'),
   getNextDisplaySequence: (categoryName) => api.get(`/admin/products/next-sequence/${categoryName}`),
   createProduct: (data) => api.post('/admin/products', data),
   updateProduct: (id, data) => api.put(`/admin/products/${id}`, data),
   deleteProduct: (id) => api.delete(`/admin/products/${id}`),
   updateProductStatus: (id, status) => api.patch(`/admin/products/${id}/status`, { status }),
-  // Shopping Categories
+  // Shopping Categories (deprecated - use shopping endpoints)
   getCategories: () => api.get('/admin/categories'),
   createCategory: (data) => api.post('/admin/categories', data),
   updateCategory: (id, data) => api.put(`/admin/categories/${id}`, data),
@@ -166,6 +181,24 @@ export const adminApi = {
   getValidationSettings: (entityType) => api.get(`/admin/validation-settings/${entityType}`),
   createValidationSetting: (data) => api.post('/admin/validation-settings', data),
   updateValidationSetting: (id, data) => api.put(`/admin/validation-settings/${id}`, data),
+  // Login
+  login: (credentials) => api.post('/admin/login', credentials),
+  // Dashboard
+  getDashboard: () => api.get('/admin/dashboard'),
+  // Users
+  getUsers: () => api.get('/admin/users'),
+  updateUserStatus: (id, status) => api.patch(`/admin/users/${id}/status`, { status }),
+  // Orders
+  getAllOrders: () => api.get('/admin/orders'),
+  updateOrderStatus: (id, status) => api.patch(`/admin/orders/${id}/status`, { status }),
+};
+
+// Validation API
+export const validationApi = {
+  getValidationSettings: (entityType) => api.get(`/validation/settings/${entityType}`),
+  validateField: (entityType, fieldName, value) => api.post('/validation/validate', { entityType, fieldName, value }),
+  seedValidationData: () => api.post('/validation/seed'),
+  invalidateCache: (entityType) => api.delete(`/validation/invalidate-cache/${entityType || ''}`),
 };
 
 export default api;

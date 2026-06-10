@@ -80,16 +80,15 @@ namespace BusinessPlatform.API.Models
         [BsonElement("name")]
 
         [Required(ErrorMessage = "Name is required")]
-        [StringLength(20, ErrorMessage = "Name must not exceed 20 characters")]
-        [RegularExpression(@"^[a-zA-Z\s\-']+$", ErrorMessage = "Name can only contain letters, spaces, hyphens, and apostrophes")]
+        [StringLength(100, ErrorMessage = "Name must not exceed 100 characters")]
+        [RegularExpression(@"^[a-zA-Z0-9\s\-']+$", ErrorMessage = "Name can only contain letters, numbers, spaces, hyphens, and apostrophes")]
         public string Name { get; set; } = string.Empty;
 
 
 
         [BsonElement("description")]
         [Required(ErrorMessage = "Description is required")]
-        [StringLength(2000, ErrorMessage = "Description must not exceed 2000 characters")]
-        [RegularExpression(@"^[a-zA-Z0-9\s\.,!?;:'\""()\-]+$", ErrorMessage = "Description contains invalid characters")]
+        [StringLength(5000, ErrorMessage = "Description must not exceed 5000 characters")]
         public string Description { get; set; } = string.Empty;
 
 

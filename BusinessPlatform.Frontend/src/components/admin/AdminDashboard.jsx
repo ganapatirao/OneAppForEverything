@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, ShoppingBag, Briefcase, Calendar, Film, Package, DollarSign, TrendingUp, Plus, Trash2, Edit, Power, PowerOff, X, RefreshCw } from 'lucide-react';
-import { adminApi, shoppingApi, advertisingApi, recruitmentApi, bookingApi } from '../services/api';
+import { adminApi, shoppingApi, advertisingApi, recruitmentApi, bookingApi } from '../../services/api';
+import ShoppingAdmin from './ShoppingAdmin';
+import SubcategoryFilter from '../SubcategoryFilter';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -9,34 +11,22 @@ export default function AdminDashboard() {
   const [dashboard, setDashboard] = useState(null);
   const [allOrders, setAllOrders] = useState([]);
   const [users, setUsers] = useState([]);
-  const [products, setProducts] = useState([]);
   const [ads, setAds] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [transports, setTransports] = useState([]);
   const [packages, setPackages] = useState([]);
   const [movies, setMovies] = useState([]);
-  const [categories, setCategories] = useState([]);
 
   // Modal states
   const [editModal, setEditModal] = useState({ isOpen: false, type: null, data: null });
   const [addModal, setAddModal] = useState({ isOpen: false, type: null });
-  const [customCategory, setCustomCategory] = useState('');
-  const [customCategoryUrl, setCustomCategoryUrl] = useState('');
-  const [productPrimaryPreview, setProductPrimaryPreview] = useState('');
-  const [productAdditionalPreviews, setProductAdditionalPreviews] = useState([]);
   const [adPrimaryPreview, setAdPrimaryPreview] = useState('');
   const [adAdditionalPreviews, setAdAdditionalPreviews] = useState([]);
   const [packagePreview, setPackagePreview] = useState('');
   const [moviePreview, setMoviePreview] = useState('');
-  const [customCategoryDescription, setCustomCategoryDescription] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [defaultDisplaySequence, setDefaultDisplaySequence] = useState(0);
-  const [productValidationErrors, setProductValidationErrors] = useState({});
-  const [productAdditionalImages, setProductAdditionalImages] = useState([]);
   const [validationSettings, setValidationSettings] = useState({});
 
   // Filter states
-  const [productFilter, setProductFilter] = useState({ name: '', category: '', status: '' });
   const [adSearchTerm, setAdSearchTerm] = useState('');
   const [adCategoryFilter, setAdCategoryFilter] = useState('All');
   const [adStatusFilter, setAdStatusFilter] = useState('All');
@@ -90,13 +80,11 @@ export default function AdminDashboard() {
     loadDashboard();
     loadAllOrders();
     loadUsers();
-    loadProducts();
     loadAds();
     loadJobs();
     loadTransports();
     loadPackages();
     loadMovies();
-    loadCategories();
     loadAdCategories();
     loadValidationSettings();
   }, [navigate]);
@@ -180,16 +168,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const loadProducts = async () => {
-    try {
-      const response = await adminApi.getProducts();
-      // Backend already sorts by displaySequence, use as-is
-      setProducts(response.data);
-    } catch (error) {
-      console.error('Error loading products:', error);
-    }
-  };
-
   const loadAds = async () => {
     try {
       const response = await advertisingApi.getAds();
@@ -235,16 +213,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const loadCategories = async () => {
-    try {
-      const response = await adminApi.getCategories();
-      // Backend already sorts by displaySequence, use as-is
-      setCategories(response.data);
-    } catch (error) {
-      console.error('Error loading categories:', error);
-    }
-  };
-
   const loadAdCategories = async () => {
     try {
       const response = await adminApi.getAdCategories();
@@ -275,111 +243,6 @@ export default function AdminDashboard() {
       alert('Order status updated!');
     } catch (error) {
       console.error('Error updating order status:', error);
-    }
-  };
-
-  // Product handlers
-  const handleDeleteProduct = async (productId) => {
-    if (confirm('Are you sure you want to delete this product?')) {
-      try {
-        await adminApi.deleteProduct(productId);
-        loadProducts();
-        alert('Product deleted successfully!');
-      } catch (error) {
-        console.error('Error deleting product:', error);
-      }
-    }
-  };
-
-  const handleUpdateProductStatus = async (productId, status) => {
-    try {
-      await adminApi.updateProductStatus(productId, status);
-      loadProducts();
-      alert('Product status updated!');
-    } catch (error) {
-      console.error('Error updating product status:', error);
-    }
-  };
-
-  const handleEditProduct = async (product) => {
-    setEditModal({ isOpen: true, type: 'product', data: product });
-    setProductValidationErrors({});
-    setProductAdditionalImages([]);
-    setSelectedCategory(product.categoryName || '');
-    console.log('Editing product:', product.categoryName, 'Categories:', categories);
-    
-    // Fetch default display sequence for the category
-    if (product.categoryName) {
-      try {
-        const response = await adminApi.getNextDisplaySequence(product.categoryName);
-        setDefaultDisplaySequence(response.data.nextSequence);
-      } catch (error) {
-        console.error('Error fetching next display sequence:', error);
-        setDefaultDisplaySequence(product.displaySequence || 0);
-      }
-    }
-  };
-
-  const handleEditCategory = (category) => {
-    setEditModal({ isOpen: true, type: 'category', data: category });
-  };
-
-  const handleDeleteCategory = async (categoryId) => {
-    if (confirm('Are you sure you want to delete this category?')) {
-      try {
-        await adminApi.deleteCategory(categoryId);
-        loadCategories();
-        alert('Category deleted successfully!');
-      } catch (error) {
-        console.error('Error deleting category:', error);
-      }
-    }
-  };
-
-  const handleSaveCategory = async (categoryData) => {
-    try {
-      if (editModal.data?.id) {
-        await adminApi.updateCategory(editModal.data.id, categoryData);
-        alert('Category updated successfully!');
-      } else {
-        await adminApi.createCategory(categoryData);
-        alert('Category created successfully!');
-      }
-      setEditModal({ isOpen: false, type: null, data: null });
-      loadCategories();
-    } catch (error) {
-      console.error('Error saving category:', error);
-    }
-  };
-
-  const handleSaveProduct = async (productData) => {
-    try {
-      // If it's a new category, create it first
-      if (selectedCategory === 'other' && customCategory) {
-        await shoppingApi.createCategory({
-          name: customCategory,
-          imageUrl: customCategoryUrl,
-          description: customCategoryDescription
-        });
-        // Reload categories to get the new one
-        await loadCategories();
-      }
-
-      if (editModal.data?.id) {
-        await adminApi.updateProduct(editModal.data.id, productData);
-        alert('Product updated successfully!');
-      } else {
-        await adminApi.createProduct(productData);
-        alert('Product created successfully!');
-      }
-      setEditModal({ isOpen: false, type: null, data: null });
-      setCustomCategory('');
-      setCustomCategoryUrl('');
-      setCustomCategoryDescription('');
-      setSelectedCategory('');
-      loadProducts();
-    } catch (error) {
-      console.error('Error saving product:', error);
     }
   };
 
@@ -817,7 +680,7 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <div className="flex space-x-4 mb-8 border-b overflow-x-auto">
-          {['overview', 'products', 'categories', 'ads', 'jobs', 'transport', 'packages', 'movies', 'orders', 'users'].map((tab) => (
+          {['overview', 'shopping', 'ads', 'jobs', 'transport', 'packages', 'movies', 'users'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -885,184 +748,8 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Products Tab */}
-        {activeTab === 'products' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-gray-800">Products ({products.length})</h2>
-              <button
-                onClick={() => {
-                  setProductPrimaryPreview('');
-                  setProductAdditionalPreviews([]);
-                  setProductAdditionalImages([]);
-                  setProductValidationErrors({});
-                  setSelectedCategory('');
-                  setEditModal({ isOpen: true, type: 'product', data: null });
-                }}
-                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-              >
-                <Plus size={16} />
-                Add Product
-              </button>
-            </div>
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              <input
-                type="text"
-                placeholder="Search by name..."
-                value={productFilter.name}
-                onChange={(e) => setProductFilter({ ...productFilter, name: e.target.value })}
-                className="px-3 py-2 border border-gray-300 rounded-lg"
-              />
-              <select
-                value={productFilter.category}
-                onChange={(e) => setProductFilter({ ...productFilter, category: e.target.value })}
-                className="px-3 py-2 border border-gray-300 rounded-lg"
-              >
-                <option value="">All Categories</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.name}>{cat.name}</option>
-                ))}
-              </select>
-              <select
-                value={productFilter.status}
-                onChange={(e) => setProductFilter({ ...productFilter, status: e.target.value })}
-                className="px-3 py-2 border border-gray-300 rounded-lg"
-              >
-                <option value="">All Status</option>
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Name</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Category</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Seller</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Price</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Stock</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Display Sequence</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products
-                    .filter(p => {
-                      const matchName = p.name?.toLowerCase().includes(productFilter.name.toLowerCase());
-                      const matchCategory = !productFilter.category || p.categoryName === productFilter.category;
-                      const matchStatus = !productFilter.status || p.status === productFilter.status;
-                      return matchName && matchCategory && matchStatus;
-                    })
-                    .map((product) => (
-                    <tr key={product.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm text-gray-800">{product.name}</td>
-                      <td className="px-4 py-3 text-sm text-gray-800">{product.categoryName}</td>
-                      <td className="px-4 py-3 text-sm text-gray-800">{product.seller}</td>
-                      <td className="px-4 py-3 text-sm text-gray-800">${product.price.toFixed(2)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-800">{product.stock}</td>
-                      <td className="px-4 py-3 text-sm text-gray-800">{product.displaySequence || 0}</td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          product.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {product.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 flex gap-2">
-                        <button
-                          onClick={() => handleEditProduct(product)}
-                          className="text-blue-600 hover:text-blue-800"
-                          title="Edit"
-                        >
-                          <Edit size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleUpdateProductStatus(product.id, product.status === 'Active' ? 'Inactive' : 'Active')}
-                          className={product.status === 'Active' ? 'text-yellow-600 hover:text-yellow-800' : 'text-green-600 hover:text-green-800'}
-                          title={product.status === 'Active' ? 'Deactivate' : 'Activate'}
-                        >
-                          {product.status === 'Active' ? <PowerOff size={16} /> : <Power size={16} />}
-                        </button>
-                        <button
-                          onClick={() => handleDeleteProduct(product.id)}
-                          className="text-red-600 hover:text-red-800"
-                          title="Delete"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Categories Tab */}
-        {activeTab === 'categories' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-gray-800">Categories ({categories.length})</h2>
-              <button
-                onClick={() => {
-                  setEditModal({ isOpen: true, type: 'category', data: null });
-                }}
-                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-              >
-                <Plus size={16} />
-                Add Category
-              </button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Name</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Description</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Display Sequence</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {categories.map((category) => (
-                    <tr key={category.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm text-gray-800">{category.name}</td>
-                      <td className="px-4 py-3 text-sm text-gray-800">{category.description}</td>
-                      <td className="px-4 py-3 text-sm text-gray-800">{category.displaySequence || 0}</td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          category.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {category.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 flex gap-2">
-                        <button
-                          onClick={() => handleEditCategory(category)}
-                          className="text-blue-600 hover:text-blue-800"
-                          title="Edit"
-                        >
-                          <Edit size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteCategory(category.id)}
-                          className="text-red-600 hover:text-red-800"
-                          title="Delete"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+        {/* Shopping Tab */}
+        {activeTab === 'shopping' && <ShoppingAdmin />}
 
         {/* Ads Tab */}
         {activeTab === 'ads' && (
@@ -1535,77 +1222,6 @@ export default function AdminDashboard() {
                         </button>
                         <button
                           onClick={() => handleDeleteMovie(movie.id)}
-                          className="text-red-600 hover:text-red-800"
-                          title="Delete"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Orders Tab */}
-        {activeTab === 'orders' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">All Orders ({allOrders.length})</h2>
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Order ID</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">User Name</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Email</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Phone</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Total</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Date</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {allOrders.map((order) => (
-                    <tr key={order.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm text-gray-800">{order.id.substring(0, 8)}...</td>
-                      <td className="px-4 py-3 text-sm text-gray-800">{order.userName}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{order.userEmail || '-'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{order.userPhone || '-'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-800">${order.total.toFixed(2)}</td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
-                          order.status === 'Shipped' ? 'bg-yellow-100 text-yellow-800' :
-                          order.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
-                          'bg-blue-100 text-blue-800'
-                        }`}>
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</td>
-                      <td className="px-4 py-3 flex gap-2">
-                        <select
-                          value={order.status}
-                          onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
-                          className="px-2 py-1 border border-gray-300 rounded text-sm"
-                        >
-                          <option value="Confirmed">Confirmed</option>
-                          <option value="Shipped">Shipped</option>
-                          <option value="Delivered">Delivered</option>
-                          <option value="Cancelled">Cancelled</option>
-                        </select>
-                        <button
-                          onClick={() => {
-                            if (confirm('Are you sure you want to delete this order?')) {
-                              adminApi.deleteOrder(order.id).then(() => {
-                                loadAllOrders();
-                                alert('Order deleted successfully!');
-                              }).catch(err => console.error('Error deleting order:', err));
-                            }
-                          }}
                           className="text-red-600 hover:text-red-800"
                           title="Delete"
                         >
@@ -2760,7 +2376,7 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Display Sequence *</label>
-                      <input name="displaySequence" type="number" min="0" defaultValue={editModal.data?.displaySequence || 0} className="w-full px-3 py-2 border border-gray-300 rounded-lg" required />
+                      <input name="displaySequence" type="number" min="0" value={editModal.data?.displaySequence || defaultCategorySequence || 0} onChange={(e) => setDefaultCategorySequence(parseInt(e.target.value) || 0)} className="w-full px-3 py-2 border border-gray-300 rounded-lg" required />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>

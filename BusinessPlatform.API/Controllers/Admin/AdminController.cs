@@ -8,10 +8,10 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using MongoDB.Driver;
 
-namespace BusinessPlatform.API.Controllers
+namespace BusinessPlatform.API.Controllers.Admin
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/admin")]
     public class AdminController : ControllerBase
     {
         private readonly MongoDbContext _context;
@@ -606,6 +606,19 @@ namespace BusinessPlatform.API.Controllers
             var categories = await _context.Categories.Find(_ => true).ToListAsync();
             var sortedCategories = categories.OrderBy(c => c.DisplaySequence).ToList();
             return Ok(sortedCategories);
+        }
+
+        [HttpGet("categories/next-sequence")]
+        [Authorize]
+        public async Task<IActionResult> GetNextCategorySequence()
+        {
+            var lastCategory = await _context.Categories
+                .Find(_ => true)
+                .SortByDescending(c => c.DisplaySequence)
+                .FirstOrDefaultAsync();
+            
+            var nextSequence = (lastCategory?.DisplaySequence ?? 0) + 1;
+            return Ok(new { nextSequence });
         }
 
         [HttpPost("categories")]
