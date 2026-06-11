@@ -57,8 +57,12 @@ namespace BusinessPlatform.API.Seed
                         GenerateSvgDataUrl("#60A5FA", "Headphones 2"),
                         GenerateSvgDataUrl("#93C5FD", "Headphones 3")
                     },
-                    Pros = new List<string> { "30-hour battery life", "Active noise cancellation", "Comfortable over-ear design", "Bluetooth 5.0 connectivity", "Foldable for easy storage" },
-                    Cons = new List<string> { "Slightly heavy", "Charging cable is short", "Not water-resistant" },
+                    Highlights = new List<string> { "30-hour battery life", "Active noise cancellation", "Comfortable over-ear design", "Bluetooth 5.0 connectivity", "Foldable for easy storage" },
+                    OfferPercentage = 15,
+                    SizeOptions = new List<ProductSizeOption> {
+                        new ProductSizeOption { Name = "Standard", PriceAdjustment = 0, Stock = 30 },
+                        new ProductSizeOption { Name = "Pro", PriceAdjustment = 2000, Stock = 20 }
+                    },
                     Reviews = new List<ProductReview> {
                         new ProductReview { UserName = "Amit Sharma", Rating = 5, Title = "Excellent sound quality", Comment = "The sound is clear, bass is strong, and noise cancellation works really well during travel.", CreatedAt = DateTime.UtcNow.AddDays(-18) },
                         new ProductReview { UserName = "Priya Nair", Rating = 4, Title = "Comfortable for long use", Comment = "Very comfortable headphones with great battery backup. The only issue is that it feels slightly heavy after many hours.", CreatedAt = DateTime.UtcNow.AddDays(-9) },
@@ -80,8 +84,12 @@ namespace BusinessPlatform.API.Seed
                         GenerateSvgDataUrl("#34D399", "Smart Watch 2"),
                         GenerateSvgDataUrl("#6EE7B7", "Smart Watch 3")
                     },
-                    Pros = new List<string> { "7-day battery life", "Water-resistant to 50m", "Built-in GPS", "Health monitoring features", "Always-on display" },
-                    Cons = new List<string> { "Expensive", "Limited app ecosystem", "Charging is slow" },
+                    Highlights = new List<string> { "7-day battery life", "Water-resistant to 50m", "Built-in GPS", "Health monitoring features", "Always-on display" },
+                    OfferPercentage = 20,
+                    SizeOptions = new List<ProductSizeOption> {
+                        new ProductSizeOption { Name = "40mm", PriceAdjustment = 0, Stock = 15 },
+                        new ProductSizeOption { Name = "44mm", PriceAdjustment = 3000, Stock = 15 }
+                    },
                     Reviews = new List<ProductReview> {
                         new ProductReview { UserName = "Sneha Reddy", Rating = 5, Title = "Perfect fitness companion", Comment = "Health tracking is accurate, GPS works well, and the battery easily lasts several days.", CreatedAt = DateTime.UtcNow.AddDays(-15) },
                         new ProductReview { UserName = "Karan Mehta", Rating = 4, Title = "Great display", Comment = "The AMOLED display looks premium and is easy to read outdoors. App support could be better.", CreatedAt = DateTime.UtcNow.AddDays(-7) },
@@ -103,8 +111,15 @@ namespace BusinessPlatform.API.Seed
                         GenerateSvgDataUrl("#F472B6", "T-Shirt 2"),
                         GenerateSvgDataUrl("#FBCFE8", "T-Shirt 3")
                     },
-                    Pros = new List<string> { "100% organic cotton", "Pre-shrunk", "Breathable fabric", "Multiple colors available", "Durable stitching" },
-                    Cons = new List<string> { "Limited size range", "Slightly expensive", "Needs careful washing" },
+                    Highlights = new List<string> { "100% organic cotton", "Pre-shrunk", "Breathable fabric", "Multiple colors available", "Durable stitching" },
+                    OfferPercentage = 10,
+                    SizeOptions = new List<ProductSizeOption> {
+                        new ProductSizeOption { Name = "S", PriceAdjustment = 0, Stock = 50 },
+                        new ProductSizeOption { Name = "M", PriceAdjustment = 0, Stock = 50 },
+                        new ProductSizeOption { Name = "L", PriceAdjustment = 0, Stock = 50 },
+                        new ProductSizeOption { Name = "XL", PriceAdjustment = 200, Stock = 30 },
+                        new ProductSizeOption { Name = "XXL", PriceAdjustment = 400, Stock = 20 }
+                    },
                     Reviews = new List<ProductReview> {
                         new ProductReview { UserName = "Rohit Kulkarni", Rating = 4, Title = "Soft and breathable", Comment = "The cotton quality is very good and feels comfortable in hot weather.", CreatedAt = DateTime.UtcNow.AddDays(-22) },
                         new ProductReview { UserName = "Ananya Das", Rating = 5, Title = "Excellent fabric", Comment = "Fabric feels premium and stitching is neat. It retained shape after washing.", CreatedAt = DateTime.UtcNow.AddDays(-11) },
@@ -126,8 +141,15 @@ namespace BusinessPlatform.API.Seed
                         GenerateSvgDataUrl("#34D399", "Running Shoes 2"),
                         GenerateSvgDataUrl("#6EE7B7", "Running Shoes 3")
                     },
-                    Pros = new List<string> { "Advanced cushioning", "Lightweight design", "Excellent traction", "Breathable mesh upper", "Energy return technology" },
-                    Cons = new List<string> { "Narrow fit", "Not suitable for wide feet", "Higher price point" },
+                    Highlights = new List<string> { "Advanced cushioning", "Lightweight design", "Excellent traction", "Breathable mesh upper", "Energy return technology" },
+                    OfferPercentage = 25,
+                    SizeOptions = new List<ProductSizeOption> {
+                        new ProductSizeOption { Name = "UK 7", PriceAdjustment = 0, Stock = 15 },
+                        new ProductSizeOption { Name = "UK 8", PriceAdjustment = 0, Stock = 15 },
+                        new ProductSizeOption { Name = "UK 9", PriceAdjustment = 0, Stock = 15 },
+                        new ProductSizeOption { Name = "UK 10", PriceAdjustment = 500, Stock = 15 },
+                        new ProductSizeOption { Name = "UK 11", PriceAdjustment = 500, Stock = 15 }
+                    },
                     Reviews = new List<ProductReview> {
                         new ProductReview { UserName = "Nitin Rao", Rating = 5, Title = "Great cushioning", Comment = "Very comfortable for running. Cushioning reduces knee impact during long runs.", CreatedAt = DateTime.UtcNow.AddDays(-19) },
                         new ProductReview { UserName = "Meera Joshi", Rating = 4, Title = "Lightweight shoes", Comment = "Shoes are light and breathable. Fit is slightly narrow, so check size before buying.", CreatedAt = DateTime.UtcNow.AddDays(-8) },
@@ -149,8 +171,12 @@ namespace BusinessPlatform.API.Seed
                         GenerateSvgDataUrl("#A78BFA", "C# Book 2"),
                         GenerateSvgDataUrl("#C4B5FD", "C# Book 3")
                     },
-                    Pros = new List<string> { "Comprehensive coverage", "Real-world examples", "Best practices included", "Suitable for all levels", "Industry-standard patterns" },
-                    Cons = new List<string> { "Heavy book", "Requires prior programming knowledge", "Some examples are outdated" },
+                    Highlights = new List<string> { "Comprehensive coverage", "Real-world examples", "Best practices included", "Suitable for all levels", "Industry-standard patterns" },
+                    OfferPercentage = 0,
+                    SizeOptions = new List<ProductSizeOption> {
+                        new ProductSizeOption { Name = "Paperback", PriceAdjustment = 0, Stock = 60 },
+                        new ProductSizeOption { Name = "Hardcover", PriceAdjustment = 1000, Stock = 40 }
+                    },
                     Reviews = new List<ProductReview> {
                         new ProductReview { UserName = "Suresh Kumar", Rating = 5, Title = "Very detailed guide", Comment = "Concepts are explained clearly with examples. Useful for beginners and intermediate developers.", CreatedAt = DateTime.UtcNow.AddDays(-30) },
                         new ProductReview { UserName = "Neha Gupta", Rating = 4, Title = "Good reference book", Comment = "Great as a reference book. Some sections need prior programming knowledge.", CreatedAt = DateTime.UtcNow.AddDays(-14) },
@@ -172,8 +198,12 @@ namespace BusinessPlatform.API.Seed
                         GenerateSvgDataUrl("#60A5FA", "Smart TV 2"),
                         GenerateSvgDataUrl("#93C5FD", "Smart TV 3")
                     },
-                    Pros = new List<string> { "4K Ultra HD resolution", "Dolby Vision HDR", "Built-in streaming apps", "Voice control", "Multiple HDMI ports" },
-                    Cons = new List<string> { "Premium pricing", "Remote could be better", "No built-in camera" },
+                    Highlights = new List<string> { "4K Ultra HD resolution", "Dolby Vision HDR", "Built-in streaming apps", "Voice control", "Multiple HDMI ports" },
+                    OfferPercentage = 30,
+                    SizeOptions = new List<ProductSizeOption> {
+                        new ProductSizeOption { Name = "55 inch", PriceAdjustment = 0, Stock = 15 },
+                        new ProductSizeOption { Name = "65 inch", PriceAdjustment = 15000, Stock = 10 }
+                    },
                     Reviews = new List<ProductReview> {
                         new ProductReview { UserName = "Akash Jain", Rating = 5, Title = "Amazing picture quality", Comment = "4K picture is sharp and colors are vibrant. Movies look fantastic on this TV.", CreatedAt = DateTime.UtcNow.AddDays(-17) },
                         new ProductReview { UserName = "Pooja Menon", Rating = 4, Title = "Good smart TV", Comment = "Apps work smoothly and sound quality is good. Remote design could have been better.", CreatedAt = DateTime.UtcNow.AddDays(-10) },
@@ -195,8 +225,13 @@ namespace BusinessPlatform.API.Seed
                         GenerateSvgDataUrl("#FBBF24", "Coffee Maker 2"),
                         GenerateSvgDataUrl("#FCD34D", "Coffee Maker 3")
                     },
-                    Pros = new List<string> { "Built-in grinder", "Thermal carafe", "Programmable timer", "Easy to clean", "Consistent brewing" },
-                    Cons = new List<string> { "Large footprint", "Noisy grinder", "Expensive" },
+                    Highlights = new List<string> { "Built-in grinder", "Thermal carafe", "Programmable timer", "Easy to clean", "Consistent brewing" },
+                    OfferPercentage = 12,
+                    SizeOptions = new List<ProductSizeOption> {
+                        new ProductSizeOption { Name = "1 cup", PriceAdjustment = 0, Stock = 25 },
+                        new ProductSizeOption { Name = "2 cups", PriceAdjustment = 1000, Stock = 20 },
+                        new ProductSizeOption { Name = "4 cups", PriceAdjustment = 2000, Stock = 15 }
+                    },
                     Reviews = new List<ProductReview> {
                         new ProductReview { UserName = "Lavanya S", Rating = 5, Title = "Fresh coffee every morning", Comment = "The grinder gives a fresh aroma and programmable timer is very convenient.", CreatedAt = DateTime.UtcNow.AddDays(-21) },
                         new ProductReview { UserName = "Ramesh N", Rating = 4, Title = "Good but large", Comment = "Coffee taste is excellent, but the machine takes more kitchen counter space.", CreatedAt = DateTime.UtcNow.AddDays(-12) },
@@ -218,8 +253,12 @@ namespace BusinessPlatform.API.Seed
                         GenerateSvgDataUrl("#34D399", "Yoga Mat 2"),
                         GenerateSvgDataUrl("#6EE7B7", "Yoga Mat 3")
                     },
-                    Pros = new List<string> { "Extra-thick padding", "Non-slip surface", "Eco-friendly materials", "Includes carrying strap", "Joint protection" },
-                    Cons = new List<string> { "Heavy to carry", "Limited color options", "Slightly expensive" },
+                    Highlights = new List<string> { "Extra-thick padding", "Non-slip surface", "Eco-friendly materials", "Includes carrying strap", "Joint protection" },
+                    OfferPercentage = 18,
+                    SizeOptions = new List<ProductSizeOption> {
+                        new ProductSizeOption { Name = "Standard", PriceAdjustment = 0, Stock = 75 },
+                        new ProductSizeOption { Name = "Extra Thick", PriceAdjustment = 500, Stock = 75 }
+                    },
                     Reviews = new List<ProductReview> {
                         new ProductReview { UserName = "Swati Mishra", Rating = 5, Title = "Comfortable yoga mat", Comment = "Padding is excellent and helps during floor exercises. Non-slip grip is very good.", CreatedAt = DateTime.UtcNow.AddDays(-16) },
                         new ProductReview { UserName = "Deepak S", Rating = 4, Title = "Good quality", Comment = "Mat feels durable and comfortable. It is slightly heavy to carry daily.", CreatedAt = DateTime.UtcNow.AddDays(-7) },

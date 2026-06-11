@@ -176,17 +176,24 @@ namespace BusinessPlatform.API.Models
 
 
 
-        [BsonElement("pros")]
-        [Required(ErrorMessage = "At least one pro is required")]
-        [MinLength(1, ErrorMessage = "At least one pro is required")]
-        public List<string> Pros { get; set; } = new List<string>();
+        [BsonElement("highlights")]
+        [Required(ErrorMessage = "At least one highlight is required")]
+        [MinLength(1, ErrorMessage = "At least one highlight is required")]
+        public List<string> Highlights { get; set; } = new List<string>();
 
 
 
-        [BsonElement("cons")]
-        [Required(ErrorMessage = "At least one con is required")]
-        [MinLength(1, ErrorMessage = "At least one con is required")]
-        public List<string> Cons { get; set; } = new List<string>();
+        [BsonElement("offerPercentage")]
+        [Range(0, 100, ErrorMessage = "Offer percentage must be between 0 and 100")]
+        public int OfferPercentage { get; set; } = 0;
+
+
+
+        [BsonElement("sizeOptions")]
+        public List<ProductSizeOption> SizeOptions { get; set; } = new List<ProductSizeOption>();
+
+
+
         [BsonElement("reviews")]
 
         public List<ProductReview> Reviews { get; set; } = new List<ProductReview>();
@@ -231,6 +238,40 @@ namespace BusinessPlatform.API.Models
 
 
 
+    public class ProductSizeOption
+
+    {
+
+        [BsonElement("name")]
+
+        [Required(ErrorMessage = "Size name is required")]
+
+        public string Name { get; set; } = string.Empty;
+
+
+
+        [BsonElement("priceAdjustment")]
+
+        [Required(ErrorMessage = "Price adjustment is required")]
+
+        [Range(-9999999, 9999999, ErrorMessage = "Price adjustment must be within valid range")]
+
+        public decimal PriceAdjustment { get; set; } = 0;
+
+
+
+        [BsonElement("stock")]
+
+        [Required(ErrorMessage = "Stock is required")]
+
+        [Range(0, 9999999, ErrorMessage = "Stock must be 0 or greater")]
+
+        public int Stock { get; set; } = 0;
+
+    }
+
+
+
     public class ShoppingCartItem
 
     {
@@ -258,6 +299,18 @@ namespace BusinessPlatform.API.Models
         [BsonElement("quantity")]
 
         public int Quantity { get; set; }
+
+
+
+        [BsonElement("sizeOptionName")]
+
+        public string? SizeOptionName { get; set; }
+
+
+
+        [BsonElement("price")]
+
+        public decimal Price { get; set; }
 
 
 
@@ -294,6 +347,12 @@ namespace BusinessPlatform.API.Models
         [BsonElement("price")]
 
         public decimal Price { get; set; }
+
+
+
+        [BsonElement("sizeOptionName")]
+
+        public string? SizeOptionName { get; set; }
 
     }
 

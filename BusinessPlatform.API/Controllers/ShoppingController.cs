@@ -132,11 +132,60 @@ namespace BusinessPlatform.API.Controllers
         {
             order.Id = null;
             order.CreatedAt = DateTime.UtcNow;
+
+            // Validate and calculate total based on current product prices
+            decimal calculatedTotal = 0;
+            foreach (var item in order.Items)
+            {
+                var product = await _context.Products.Find(p => p.Id == item.ProductId).FirstOrDefaultAsync();
+                if (product == null)
+                {
+                    return BadRequest(new { message = $"Product {item.ProductName} not found" });
+                }
+
+                decimal itemPrice = product.Price;
+
+                if (!string.IsNullOrEmpty(item.SizeOptionName))
+                {
+                    var sizeOption = product.SizeOptions?.FirstOrDefault(so => so.Name == item.SizeOptionName);
+                    if (sizeOption == null)
+                    {
+                        return BadRequest(new { message = $"Invalid size option for {item.ProductName}" });
+                    }
+                    if (product.OfferPercentage > 0)
+                    {
+                        itemPrice = product.Price - (product.Price * product.OfferPercentage / 100);
+                    }
+                    itemPrice += sizeOption.PriceAdjustment;
+                }
+                else
+                {
+                    if (product.OfferPercentage > 0)
+                    {
+                        itemPrice = product.Price - (product.Price * product.OfferPercentage / 100);
+                    }
+                }
+
+                // Validate item price
+                if (item.Price != itemPrice)
+                {
+                    return BadRequest(new { message = $"Price validation failed for {item.ProductName}. Please try again." });
+                }
+
+                calculatedTotal += itemPrice * item.Quantity;
+            }
+
+            // Validate total
+            if (order.Total != calculatedTotal)
+            {
+                return BadRequest(new { message = "Total validation failed. Please try again." });
+            }
+
             await _context.ShoppingOrders.InsertOneAsync(order);
-            
+
             // Clear cart
             await _context.ShoppingCartItems.DeleteManyAsync(c => c.UserId == order.UserId);
-            
+
             return Ok(new { message = "Order created successfully", order });
         }
 
@@ -193,11 +242,64 @@ namespace BusinessPlatform.API.Controllers
         {
             item.Id = null;
             item.CreatedAt = DateTime.UtcNow;
-            
+
+            // Fetch product to validate and calculate price
+            var product = await _context.Products.Find(p => p.Id == item.ProductId).FirstOrDefaultAsync();
+            if (product == null)
+            {
+                return BadRequest(new { message = "Product not found" });
+            }
+
+            // Validate and calculate price based on size option
+            decimal calculatedPrice = product.Price;
+
+            if (!string.IsNullOrEmpty(item.SizeOptionName))
+            {
+                var sizeOption = product.SizeOptions?.FirstOrDefault(so => so.Name == item.SizeOptionName);
+                if (sizeOption == null)
+                {
+                    return BadRequest(new { message = "Invalid size option" });
+                }
+
+                // Check stock
+                if (sizeOption.Stock < item.Quantity)
+                {
+                    return BadRequest(new { message = "Insufficient stock for selected size" });
+                }
+
+                // Calculate price with offer percentage and size adjustment
+                if (product.OfferPercentage > 0)
+                {
+                    calculatedPrice = product.Price - (product.Price * product.OfferPercentage / 100);
+                }
+                calculatedPrice += sizeOption.PriceAdjustment;
+            }
+            else
+            {
+                // No size option selected - use base price with offer
+                if (product.OfferPercentage > 0)
+                {
+                    calculatedPrice = product.Price - (product.Price * product.OfferPercentage / 100);
+                }
+
+                // Check base stock
+                if (product.Stock < item.Quantity)
+                {
+                    return BadRequest(new { message = "Insufficient stock" });
+                }
+            }
+
+            // Validate that the provided price matches calculated price (prevent tampering)
+            if (item.Price != calculatedPrice)
+            {
+                return BadRequest(new { message = "Price validation failed. Please try again." });
+            }
+
+            // Check for existing cart item with same product and size option
             var existing = await _context.ShoppingCartItems
-                .Find(c => c.UserId == item.UserId && c.ProductId == item.ProductId)
+                .Find(c => c.UserId == item.UserId && c.ProductId == item.ProductId && c.SizeOptionName == item.SizeOptionName)
                 .FirstOrDefaultAsync();
-            
+
             if (existing != null)
             {
                 var updateDef = Builders<ShoppingCartItem>.Update.Inc(c => c.Quantity, item.Quantity);
@@ -207,8 +309,8 @@ namespace BusinessPlatform.API.Controllers
             {
                 await _context.ShoppingCartItems.InsertOneAsync(item);
             }
-            
-            return Ok(new { message = "Item added to cart successfully" });
+
+            return Ok(new { message = "Item added to cart successfully", price = calculatedPrice });
         }
 
         [HttpDelete("cart/{id}")]

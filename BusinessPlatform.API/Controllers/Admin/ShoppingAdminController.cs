@@ -220,26 +220,20 @@ namespace BusinessPlatform.API.Controllers.Admin
                 return BadRequest(new { message = "Validation failed", errors = ModelState });
             }
 
-            if (product.Pros != null)
+            if (product.Highlights != null)
             {
-                foreach (var pro in product.Pros)
+                foreach (var highlight in product.Highlights)
                 {
-                    if (pro.Length > 500)
+                    if (highlight.Length > 500)
                     {
-                        return BadRequest(new { message = "Pro must not exceed 500 characters" });
+                        return BadRequest(new { message = "Highlight must not exceed 500 characters" });
                     }
                 }
             }
 
-            if (product.Cons != null)
+            if (product.OfferPercentage < 0 || product.OfferPercentage > 100)
             {
-                foreach (var con in product.Cons)
-                {
-                    if (con.Length > 500)
-                    {
-                        return BadRequest(new { message = "Con must not exceed 500 characters" });
-                    }
-                }
+                return BadRequest(new { message = "Offer percentage must be between 0 and 100" });
             }
 
             if (!string.IsNullOrEmpty(product.ImageUrl) && !product.ImageUrl.StartsWith("data:") && !Uri.TryCreate(product.ImageUrl, UriKind.Absolute, out _))
@@ -358,26 +352,20 @@ namespace BusinessPlatform.API.Controllers.Admin
                 return BadRequest(new { message = "Validation failed", errors = ModelState });
             }
 
-            if (product.Pros != null)
+            if (product.Highlights != null)
             {
-                foreach (var pro in product.Pros)
+                foreach (var highlight in product.Highlights)
                 {
-                    if (pro.Length > 500)
+                    if (highlight.Length > 500)
                     {
-                        return BadRequest(new { message = "Pro must not exceed 500 characters" });
+                        return BadRequest(new { message = "Highlight must not exceed 500 characters" });
                     }
                 }
             }
 
-            if (product.Cons != null)
+            if (product.OfferPercentage < 0 || product.OfferPercentage > 100)
             {
-                foreach (var con in product.Cons)
-                {
-                    if (con.Length > 500)
-                    {
-                        return BadRequest(new { message = "Con must not exceed 500 characters" });
-                    }
-                }
+                return BadRequest(new { message = "Offer percentage must be between 0 and 100" });
             }
 
             if (!string.IsNullOrEmpty(product.ImageUrl) && !product.ImageUrl.StartsWith("data:") && !Uri.TryCreate(product.ImageUrl, UriKind.Absolute, out _))
