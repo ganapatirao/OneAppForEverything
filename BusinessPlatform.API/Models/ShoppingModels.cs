@@ -273,6 +273,12 @@ namespace BusinessPlatform.API.Models
 
         public int Stock { get; set; } = 0;
 
+
+
+        [BsonElement("isDefault")]
+
+        public bool IsDefault { get; set; } = false;
+
     }
 
 
