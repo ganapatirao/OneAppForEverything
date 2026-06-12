@@ -63,29 +63,41 @@ namespace BusinessPlatform.API.Seed
             };
             await _context.Users.InsertOneAsync(user2);
 
-            var user3 = new User
+            var recruiterUser = new User
             {
-                Username = "bobwilson",
-                Email = "bob@example.com",
+                Username = "recruiter",
+                Email = "recruiter@example.com",
                 Password = HashPassword("password123"),
-                FullName = "Bob Wilson",
+                FullName = "Recruiter Agent",
                 Phone = "+1-555-0103",
-                Role = "User",
+                Role = "Recruiter",
                 IsActive = true
             };
-            await _context.Users.InsertOneAsync(user3);
+            await _context.Users.InsertOneAsync(recruiterUser);
 
-            var user4 = new User
+            var advertiserUser = new User
             {
-                Username = "alicebrown",
-                Email = "alice@example.com",
+                Username = "advertiser",
+                Email = "advertiser@example.com",
                 Password = HashPassword("password123"),
-                FullName = "Alice Brown",
+                FullName = "Advertising Agent",
                 Phone = "+1-555-0104",
-                Role = "User",
+                Role = "Advertiser",
                 IsActive = true
             };
-            await _context.Users.InsertOneAsync(user4);
+            await _context.Users.InsertOneAsync(advertiserUser);
+
+            var bookingAgentUser = new User
+            {
+                Username = "bookingagent",
+                Email = "booking@example.com",
+                Password = HashPassword("password123"),
+                FullName = "Booking Agent",
+                Phone = "+1-555-0105",
+                Role = "BookingAgent",
+                IsActive = true
+            };
+            await _context.Users.InsertOneAsync(bookingAgentUser);
         }
     }
 }

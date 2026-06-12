@@ -194,6 +194,11 @@ namespace BusinessPlatform.API.Models
 
 
 
+        [BsonElement("colorVariants")]
+        public List<ProductColorVariant> ColorVariants { get; set; } = new List<ProductColorVariant>();
+
+
+
         [BsonElement("reviews")]
 
         public List<ProductReview> Reviews { get; set; } = new List<ProductReview>();
@@ -272,6 +277,64 @@ namespace BusinessPlatform.API.Models
 
 
 
+    public class ProductColorVariant
+
+    {
+
+        [BsonElement("name")]
+
+        [Required(ErrorMessage = "Color name is required")]
+
+        public string Name { get; set; } = string.Empty;
+
+
+
+        [BsonElement("hexCode")]
+
+        public string HexCode { get; set; } = string.Empty;
+
+
+
+        [BsonElement("imageUrl")]
+
+        [Required(ErrorMessage = "Primary image is required for color variant")]
+
+        public string ImageUrl { get; set; } = string.Empty;
+
+
+
+        [BsonElement("imageUrls")]
+
+        public List<string> ImageUrls { get; set; } = new List<string>();
+
+
+
+        [BsonElement("priceAdjustment")]
+
+        public decimal PriceAdjustment { get; set; } = 0;
+
+
+
+        [BsonElement("sizeOptions")]
+
+        public List<ProductSizeOption> SizeOptions { get; set; } = new List<ProductSizeOption>();
+
+
+
+        [BsonElement("stock")]
+
+        public int Stock { get; set; } = 0;
+
+
+
+        [BsonElement("isDefault")]
+
+        public bool IsDefault { get; set; } = false;
+
+    }
+
+
+
     public class ShoppingCartItem
 
     {
@@ -305,6 +368,12 @@ namespace BusinessPlatform.API.Models
         [BsonElement("sizeOptionName")]
 
         public string? SizeOptionName { get; set; }
+
+
+
+        [BsonElement("colorVariantName")]
+
+        public string? ColorVariantName { get; set; }
 
 
 
@@ -353,6 +422,12 @@ namespace BusinessPlatform.API.Models
         [BsonElement("sizeOptionName")]
 
         public string? SizeOptionName { get; set; }
+
+
+
+        [BsonElement("colorVariantName")]
+
+        public string? ColorVariantName { get; set; }
 
     }
 
