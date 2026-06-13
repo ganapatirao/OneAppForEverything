@@ -20,6 +20,14 @@ export default function Booking({ userRole }) {
     bookingDate: ''
   });
 
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(price);
+  };
+
   useEffect(() => {
     loadTransports();
     loadPackages();
@@ -223,7 +231,7 @@ export default function Booking({ userRole }) {
                     <span className="ml-2 text-sm text-gray-600">{transport.duration}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <p className="text-lg font-bold text-blue-600">${transport.price.toFixed(2)}</p>
+                    <p className="text-lg font-bold text-blue-600">{formatPrice(transport.price)}</p>
                     <button
                       onClick={() => handleBook(transport, 'transport')}
                       className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
@@ -259,7 +267,7 @@ export default function Booking({ userRole }) {
                     ))}
                   </div>
                   <div className="flex justify-between items-center">
-                    <p className="text-lg font-bold text-purple-600">${pkg.price.toFixed(2)}</p>
+                    <p className="text-lg font-bold text-purple-600">{formatPrice(pkg.price)}</p>
                     <button
                       onClick={() => handleBook(pkg, 'package')}
                       className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
@@ -326,7 +334,7 @@ export default function Booking({ userRole }) {
                       <td className="px-4 py-3 text-sm text-gray-800 capitalize">{booking.type}</td>
                       <td className="px-4 py-3 text-sm text-gray-800">{booking.itemName}</td>
                       <td className="px-4 py-3 text-sm text-gray-800">{booking.quantity}</td>
-                      <td className="px-4 py-3 text-sm text-gray-800">${booking.totalPrice.toFixed(2)}</td>
+                      <td className="px-4 py-3 text-sm text-gray-800">{formatPrice(booking.totalPrice)}</td>
                       <td className="px-4 py-3 text-sm text-gray-600">{new Date(booking.bookingDate).toLocaleDateString()}</td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -375,11 +383,11 @@ export default function Booking({ userRole }) {
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Price per item:</span>
-                    <span className="font-bold text-gray-800">${(selectedItem.price || 0).toFixed(2)}</span>
+                    <span className="font-bold text-gray-800">{formatPrice(selectedItem.price || 0)}</span>
                   </div>
                   <div className="flex justify-between items-center mt-2">
                     <span className="text-gray-600">Total:</span>
-                    <span className="font-bold text-blue-600">${((selectedItem.price || 0) * parseInt(bookingData.quantity)).toFixed(2)}</span>
+                    <span className="font-bold text-blue-600">{formatPrice((selectedItem.price || 0) * parseInt(bookingData.quantity))}</span>
                   </div>
                 </div>
                 <div className="flex space-x-4">
