@@ -1,11 +1,519 @@
 using BusinessPlatform.API.Models;
 using BusinessPlatform.API.Services;
 using MongoDB.Driver;
+using System.Linq;
 
 namespace BusinessPlatform.API.Seed
 {
     public class ValidationSeedData
     {
+        public static List<ValidationSetting> GetCheckoutValidationSettings()
+        {
+            return new[]
+            {
+                new ValidationSetting
+                {
+                    EntityType = "checkout",
+                    FieldName = "name",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        MinLength = 2,
+                        MaxLength = 100
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "Name is required",
+                        MinLength = "Name must be at least 2 characters",
+                        MaxLength = "Name must not exceed 100 characters"
+                    }
+                },
+                new ValidationSetting
+                {
+                    EntityType = "checkout",
+                    FieldName = "phone",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        RegexPattern = "^\\+?[\\d\\s-]{10,}$",
+                        MaxLength = 15
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "Phone number is required",
+                        Pattern = "Phone number must be at least 10 digits",
+                        MaxLength = "Phone number must not exceed 15 characters"
+                    }
+                },
+                new ValidationSetting
+                {
+                    EntityType = "checkout",
+                    FieldName = "email",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        RegexPattern = "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$",
+                        MaxLength = 100
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "Email is required",
+                        Pattern = "Invalid email address",
+                        MaxLength = "Email must not exceed 100 characters"
+                    }
+                },
+                new ValidationSetting
+                {
+                    EntityType = "checkout",
+                    FieldName = "address",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        MinLength = 10,
+                        MaxLength = 500
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "Address is required",
+                        MinLength = "Address must be at least 10 characters",
+                        MaxLength = "Address must not exceed 500 characters"
+                    }
+                },
+                new ValidationSetting
+                {
+                    EntityType = "checkout",
+                    FieldName = "city",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        MaxLength = 50
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "City is required",
+                        MaxLength = "City must not exceed 50 characters"
+                    }
+                },
+                new ValidationSetting
+                {
+                    EntityType = "checkout",
+                    FieldName = "pincode",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        RegexPattern = "^\\d{6}$"
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "Pincode is required",
+                        Pattern = "Pincode must be exactly 6 digits"
+                    }
+                }
+            }.ToList();
+        }
+
+        public static List<ValidationSetting> GetAdvertisementValidationSettings()
+        {
+            return new[]
+            {
+                new ValidationSetting
+                {
+                    EntityType = "Advertisement",
+                    FieldName = "title",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        MaxLength = 100
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "Title is required",
+                        MaxLength = "Title must not exceed 100 characters"
+                    }
+                },
+                new ValidationSetting
+                {
+                    EntityType = "Advertisement",
+                    FieldName = "description",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        MaxLength = 2000
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "Description is required",
+                        MaxLength = "Description must not exceed 2000 characters"
+                    }
+                },
+                new ValidationSetting
+                {
+                    EntityType = "Advertisement",
+                    FieldName = "price",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        MinValue = 0.01m,
+                        MaxValue = 99999999m
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "Price is required",
+                        MinValue = "Price must be greater than 0",
+                        MaxValue = "Price must not exceed 99999999"
+                    }
+                },
+                new ValidationSetting
+                {
+                    EntityType = "Advertisement",
+                    FieldName = "categoryName",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        MaxLength = 50
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "Category name is required",
+                        MaxLength = "Category name must not exceed 50 characters"
+                    }
+                },
+                new ValidationSetting
+                {
+                    EntityType = "Advertisement",
+                    FieldName = "subcategory",
+                    ValidationRules = new ValidationRules
+                    {
+                        MaxLength = 50
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        MaxLength = "Subcategory must not exceed 50 characters"
+                    }
+                },
+                new ValidationSetting
+                {
+                    EntityType = "Advertisement",
+                    FieldName = "location",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        MaxLength = 100
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "Location is required",
+                        MaxLength = "Location must not exceed 100 characters"
+                    }
+                },
+                new ValidationSetting
+                {
+                    EntityType = "Advertisement",
+                    FieldName = "city",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        MaxLength = 50
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "City is required",
+                        MaxLength = "City must not exceed 50 characters"
+                    }
+                },
+                new ValidationSetting
+                {
+                    EntityType = "Advertisement",
+                    FieldName = "condition",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        MaxLength = 50
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "Condition is required",
+                        MaxLength = "Condition must not exceed 50 characters"
+                    }
+                },
+                new ValidationSetting
+                {
+                    EntityType = "Advertisement",
+                    FieldName = "sellerName",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        MaxLength = 100
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "Seller name is required",
+                        MaxLength = "Seller name must not exceed 100 characters"
+                    }
+                },
+                new ValidationSetting
+                {
+                    EntityType = "Advertisement",
+                    FieldName = "sellerPhone",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        MaxLength = 15,
+                        RegexPattern = "^\\+?[\\d\\s-]{10,}$"
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "Seller phone is required",
+                        MaxLength = "Phone number must not exceed 15 characters",
+                        Pattern = "Phone number must be at least 10 digits"
+                    }
+                },
+                new ValidationSetting
+                {
+                    EntityType = "Advertisement",
+                    FieldName = "sellerEmail",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        MaxLength = 100,
+                        RegexPattern = "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$"
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "Seller email is required",
+                        MaxLength = "Email must not exceed 100 characters",
+                        Pattern = "Invalid email address"
+                    }
+                },
+                new ValidationSetting
+                {
+                    EntityType = "Advertisement",
+                    FieldName = "imageUrl",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "Image URL is required"
+                    }
+                },
+                new ValidationSetting
+                {
+                    EntityType = "Advertisement",
+                    FieldName = "status",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        AllowedValues = new List<string> { "Active", "Inactive", "Pending" }
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "Status is required",
+                        InvalidValue = "Status must be Active, Inactive, or Pending"
+                    }
+                }
+            }.ToList();
+        }
+
+        public static List<ValidationSetting> GetAdCategoryValidationSettings()
+        {
+            return new[]
+            {
+                new ValidationSetting
+                {
+                    EntityType = "AdCategory",
+                    FieldName = "name",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        MinLength = 2,
+                        MaxLength = 50,
+                        RegexPattern = "^[a-zA-Z0-9\\s&-]+$"
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "Category name is required",
+                        MinLength = "Category name must be at least 2 characters",
+                        MaxLength = "Category name must not exceed 50 characters",
+                        Pattern = "Category name can only contain letters, numbers, spaces, ampersands, and hyphens"
+                    }
+                },
+                new ValidationSetting
+                {
+                    EntityType = "AdCategory",
+                    FieldName = "emoji",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        MaxLength = 10
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "Emoji is required",
+                        MaxLength = "Emoji must not exceed 10 characters"
+                    }
+                },
+                new ValidationSetting
+                {
+                    EntityType = "AdCategory",
+                    FieldName = "status",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        AllowedValues = new List<string> { "Active", "Inactive" }
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "Status is required",
+                        InvalidValue = "Status must be Active or Inactive"
+                    }
+                }
+            }.ToList();
+        }
+
+        public static List<ValidationSetting> GetStateValidationSettings()
+        {
+            return new[]
+            {
+                new ValidationSetting
+                {
+                    EntityType = "State",
+                    FieldName = "name",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        MinLength = 2,
+                        MaxLength = 50,
+                        RegexPattern = "^[a-zA-Z\\s]+$"
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "State name is required",
+                        MinLength = "State name must be at least 2 characters",
+                        MaxLength = "State name must not exceed 50 characters",
+                        Pattern = "State name can only contain letters and spaces"
+                    }
+                },
+                new ValidationSetting
+                {
+                    EntityType = "State",
+                    FieldName = "code",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        MinLength = 2,
+                        MaxLength = 10,
+                        RegexPattern = "^[A-Z]{2,}$"
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "State code is required",
+                        MinLength = "State code must be at least 2 characters",
+                        MaxLength = "State code must not exceed 10 characters",
+                        Pattern = "State code must be uppercase letters only"
+                    }
+                }
+            }.ToList();
+        }
+
+        public static List<ValidationSetting> GetCityValidationSettings()
+        {
+            return new[]
+            {
+                new ValidationSetting
+                {
+                    EntityType = "City",
+                    FieldName = "name",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        MinLength = 2,
+                        MaxLength = 50,
+                        RegexPattern = "^[a-zA-Z\\s]+$"
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "City name is required",
+                        MinLength = "City name must be at least 2 characters",
+                        MaxLength = "City name must not exceed 50 characters",
+                        Pattern = "City name can only contain letters and spaces"
+                    }
+                },
+                new ValidationSetting
+                {
+                    EntityType = "City",
+                    FieldName = "stateCode",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        MaxLength = 10,
+                        RegexPattern = "^[A-Z]{2,}$"
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "State code is required",
+                        MaxLength = "State code must not exceed 10 characters",
+                        Pattern = "State code must be uppercase letters only"
+                    }
+                },
+                new ValidationSetting
+                {
+                    EntityType = "City",
+                    FieldName = "stateName",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        MaxLength = 50
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "State name is required",
+                        MaxLength = "State name must not exceed 50 characters"
+                    }
+                }
+            }.ToList();
+        }
+
+        public static List<ValidationSetting> GetAdConditionValidationSettings()
+        {
+            return new[]
+            {
+                new ValidationSetting
+                {
+                    EntityType = "AdCondition",
+                    FieldName = "name",
+                    ValidationRules = new ValidationRules
+                    {
+                        Required = true,
+                        MinLength = 2,
+                        MaxLength = 50,
+                        RegexPattern = "^[a-zA-Z\\s]+$"
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        Required = "Condition name is required",
+                        MinLength = "Condition name must be at least 2 characters",
+                        MaxLength = "Condition name must not exceed 50 characters",
+                        Pattern = "Condition name can only contain letters and spaces"
+                    }
+                },
+                new ValidationSetting
+                {
+                    EntityType = "AdCondition",
+                    FieldName = "description",
+                    ValidationRules = new ValidationRules
+                    {
+                        MaxLength = 200
+                    },
+                    ErrorMessages = new ErrorMessages
+                    {
+                        MaxLength = "Description must not exceed 200 characters"
+                    }
+                }
+            }.ToList();
+        }
+
         private readonly MongoDbContext _context;
 
         public ValidationSeedData(MongoDbContext context)

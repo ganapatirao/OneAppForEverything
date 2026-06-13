@@ -11,10 +11,12 @@ namespace BusinessPlatform.API.Controllers
     public class AdvertisingController : ControllerBase
     {
         private readonly MongoDbContext _context;
+        private readonly ValidationService _validationService;
 
-        public AdvertisingController(MongoDbContext context)
+        public AdvertisingController(MongoDbContext context, ValidationService validationService)
         {
             _context = context;
+            _validationService = validationService;
         }
 
         [HttpGet("ads")]
@@ -51,6 +53,66 @@ namespace BusinessPlatform.API.Controllers
                 return BadRequest(new { message = "Validation failed", errors = ModelState });
             }
 
+            // Dynamic validation using ValidationService
+            var validationSettings = await _validationService.GetValidationSettingsAsync("Advertisement");
+            var errors = new Dictionary<string, List<string>>();
+
+            if (validationSettings.ContainsKey("title"))
+            {
+                var result = _validationService.ValidateField("title", ad.Title, validationSettings["title"]);
+                if (!result.IsValid) errors["title"] = result.Errors;
+            }
+            if (validationSettings.ContainsKey("description"))
+            {
+                var result = _validationService.ValidateField("description", ad.Description, validationSettings["description"]);
+                if (!result.IsValid) errors["description"] = result.Errors;
+            }
+            if (validationSettings.ContainsKey("price"))
+            {
+                var priceResult = _validationService.ValidateField("price", ad.Price.ToString(), validationSettings["price"]);
+                if (!priceResult.IsValid) errors["price"] = priceResult.Errors;
+            }
+            if (validationSettings.ContainsKey("categoryName"))
+            {
+                var result = _validationService.ValidateField("categoryName", ad.CategoryName, validationSettings["categoryName"]);
+                if (!result.IsValid) errors["categoryName"] = result.Errors;
+            }
+            if (validationSettings.ContainsKey("location"))
+            {
+                var result = _validationService.ValidateField("location", ad.Location, validationSettings["location"]);
+                if (!result.IsValid) errors["location"] = result.Errors;
+            }
+            if (validationSettings.ContainsKey("city"))
+            {
+                var result = _validationService.ValidateField("city", ad.City, validationSettings["city"]);
+                if (!result.IsValid) errors["city"] = result.Errors;
+            }
+            if (validationSettings.ContainsKey("condition"))
+            {
+                var result = _validationService.ValidateField("condition", ad.Condition, validationSettings["condition"]);
+                if (!result.IsValid) errors["condition"] = result.Errors;
+            }
+            if (validationSettings.ContainsKey("sellerPhone"))
+            {
+                var result = _validationService.ValidateField("sellerPhone", ad.SellerPhone, validationSettings["sellerPhone"]);
+                if (!result.IsValid) errors["phone"] = result.Errors;
+            }
+            if (validationSettings.ContainsKey("sellerEmail"))
+            {
+                var emailResult = _validationService.ValidateField("sellerEmail", ad.SellerEmail, validationSettings["sellerEmail"]);
+                if (!emailResult.IsValid) errors["email"] = emailResult.Errors;
+            }
+            if (validationSettings.ContainsKey("imageUrl"))
+            {
+                var imageResult = _validationService.ValidateField("imageUrl", ad.ImageUrl, validationSettings["imageUrl"]);
+                if (!imageResult.IsValid) errors["imageUrl"] = imageResult.Errors;
+            }
+
+            if (errors.Count > 0)
+            {
+                return BadRequest(new { message = "Validation failed", errors });
+            }
+
             // Additional validation for image URLs - allow data URLs
             if (!string.IsNullOrEmpty(ad.ImageUrl) && !ad.ImageUrl.StartsWith("data:") && !Uri.TryCreate(ad.ImageUrl, UriKind.Absolute, out _))
             {
@@ -82,6 +144,66 @@ namespace BusinessPlatform.API.Controllers
             if (!ModelState.IsValid)
             {
                 return BadRequest(new { message = "Validation failed", errors = ModelState });
+            }
+
+            // Dynamic validation using ValidationService
+            var validationSettings = await _validationService.GetValidationSettingsAsync("Advertisement");
+            var errors = new Dictionary<string, List<string>>();
+
+            if (validationSettings.ContainsKey("title"))
+            {
+                var titleResult = _validationService.ValidateField("title", ad.Title, validationSettings["title"]);
+                if (!titleResult.IsValid) errors["title"] = titleResult.Errors;
+            }
+            if (validationSettings.ContainsKey("description"))
+            {
+                var descResult = _validationService.ValidateField("description", ad.Description, validationSettings["description"]);
+                if (!descResult.IsValid) errors["description"] = descResult.Errors;
+            }
+            if (validationSettings.ContainsKey("price"))
+            {
+                var priceResult = _validationService.ValidateField("price", ad.Price.ToString(), validationSettings["price"]);
+                if (!priceResult.IsValid) errors["price"] = priceResult.Errors;
+            }
+            if (validationSettings.ContainsKey("categoryName"))
+            {
+                var catResult = _validationService.ValidateField("categoryName", ad.CategoryName, validationSettings["categoryName"]);
+                if (!catResult.IsValid) errors["categoryName"] = catResult.Errors;
+            }
+            if (validationSettings.ContainsKey("location"))
+            {
+                var locResult = _validationService.ValidateField("location", ad.Location, validationSettings["location"]);
+                if (!locResult.IsValid) errors["location"] = locResult.Errors;
+            }
+            if (validationSettings.ContainsKey("city"))
+            {
+                var cityResult = _validationService.ValidateField("city", ad.City, validationSettings["city"]);
+                if (!cityResult.IsValid) errors["city"] = cityResult.Errors;
+            }
+            if (validationSettings.ContainsKey("condition"))
+            {
+                var condResult = _validationService.ValidateField("condition", ad.Condition, validationSettings["condition"]);
+                if (!condResult.IsValid) errors["condition"] = condResult.Errors;
+            }
+            if (validationSettings.ContainsKey("sellerPhone"))
+            {
+                var phoneResult = _validationService.ValidateField("sellerPhone", ad.SellerPhone, validationSettings["sellerPhone"]);
+                if (!phoneResult.IsValid) errors["phone"] = phoneResult.Errors;
+            }
+            if (validationSettings.ContainsKey("sellerEmail"))
+            {
+                var emailResult = _validationService.ValidateField("sellerEmail", ad.SellerEmail, validationSettings["sellerEmail"]);
+                if (!emailResult.IsValid) errors["email"] = emailResult.Errors;
+            }
+            if (validationSettings.ContainsKey("imageUrl"))
+            {
+                var imageResult = _validationService.ValidateField("imageUrl", ad.ImageUrl, validationSettings["imageUrl"]);
+                if (!imageResult.IsValid) errors["imageUrl"] = imageResult.Errors;
+            }
+
+            if (errors.Count > 0)
+            {
+                return BadRequest(new { message = "Validation failed", errors });
             }
 
             // Additional validation for image URLs - allow data URLs
@@ -251,6 +373,33 @@ namespace BusinessPlatform.API.Controllers
                 return NotFound(new { message = "Advertisement not found" });
             }
             return Ok(new { message = "Views incremented successfully" });
+        }
+
+        [HttpGet("states")]
+        public async Task<IActionResult> GetStates()
+        {
+            var states = await _context.States.Find(s => s.IsActive).SortBy(s => s.DisplaySequence).ToListAsync();
+            return Ok(states);
+        }
+
+        [HttpGet("cities")]
+        public async Task<IActionResult> GetCities([FromQuery] string? stateCode = null)
+        {
+            var filter = stateCode != null 
+                ? Builders<City>.Filter.And(
+                    Builders<City>.Filter.Eq(c => c.StateCode, stateCode),
+                    Builders<City>.Filter.Eq(c => c.IsActive, true))
+                : Builders<City>.Filter.Eq(c => c.IsActive, true);
+            
+            var cities = await _context.Cities.Find(filter).SortBy(c => c.DisplaySequence).ToListAsync();
+            return Ok(cities);
+        }
+
+        [HttpGet("conditions")]
+        public async Task<IActionResult> GetAdConditions()
+        {
+            var conditions = await _context.AdConditions.Find(c => c.IsActive).SortBy(c => c.DisplaySequence).ToListAsync();
+            return Ok(conditions);
         }
     }
 

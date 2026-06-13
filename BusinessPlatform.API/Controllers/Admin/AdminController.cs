@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text;
 using BusinessPlatform.API.Models;
 using BusinessPlatform.API.Services;
+using BusinessPlatform.API.Seed;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -943,6 +944,22 @@ namespace BusinessPlatform.API.Controllers.Admin
             }
         }
 
+        // Public Seed Data (no auth required for development)
+        [HttpPost("public-seed-data")]
+        public async Task<IActionResult> PublicSeedData()
+        {
+            try
+            {
+                var seedData = new SeedData(_context);
+                await seedData.SeedAsync();
+                return Ok(new { message = "Data seeded successfully" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Error seeding data", error = ex.Message });
+            }
+        }
+
         // Jobs CRUD
         [HttpGet("jobs")]
         [Authorize]
@@ -1572,10 +1589,45 @@ namespace BusinessPlatform.API.Controllers.Admin
         [Authorize]
         public async Task<IActionResult> CreateAdCategory([FromBody] AdCategory category)
         {
+            // Validate category using validation service
+            var validationSettings = await _validationService.GetValidationSettingsAsync("AdCategory");
+            if (validationSettings.ContainsKey("name"))
+            {
+                var nameResult = _validationService.ValidateField("name", category.Name, validationSettings["name"]);
+                if (!nameResult.IsValid)
+                {
+                    return BadRequest(new { message = "Validation failed", errors = new { name = nameResult.Errors } });
+                }
+            }
+
             category.Id = null;
             category.CreatedAt = DateTime.UtcNow;
             await _context.AdCategories.InsertOneAsync(category);
             return Ok(new { message = "Category created successfully", category });
+        }
+
+        [HttpPut("ad-categories/{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateAdCategory(string id, [FromBody] AdCategory category)
+        {
+            // Validate category using validation service
+            var validationSettings = await _validationService.GetValidationSettingsAsync("AdCategory");
+            if (validationSettings.ContainsKey("name"))
+            {
+                var nameResult = _validationService.ValidateField("name", category.Name, validationSettings["name"]);
+                if (!nameResult.IsValid)
+                {
+                    return BadRequest(new { message = "Validation failed", errors = new { name = nameResult.Errors } });
+                }
+            }
+
+            category.Id = id;
+            var result = await _context.AdCategories.ReplaceOneAsync(c => c.Id == id, category);
+            if (result.MatchedCount == 0)
+            {
+                return NotFound(new { message = "Category not found" });
+            }
+            return Ok(new { message = "Category updated successfully" });
         }
 
         [HttpDelete("ad-categories/{id}")]
@@ -1588,6 +1640,238 @@ namespace BusinessPlatform.API.Controllers.Admin
                 return NotFound(new { message = "Category not found" });
             }
             return Ok(new { message = "Category deleted successfully" });
+        }
+
+        [HttpPost("seed-ad-categories")]
+        [Authorize]
+        public async Task<IActionResult> SeedAdCategories()
+        {
+            var existingCount = await _context.AdCategories.CountDocumentsAsync(_ => true);
+            if (existingCount > 0)
+            {
+                return Ok(new { message = "Ad categories already exist" });
+            }
+
+            var defaultCategories = new[]
+            {
+                new AdCategory { Name = "Electronics", Emoji = "📱", Subcategories = new List<string> { "Mobile Phones", "Laptops", "Tablets", "Cameras", "Accessories" }, Status = "Active" },
+                new AdCategory { Name = "Vehicles", Emoji = "🚗", Subcategories = new List<string> { "Cars", "Motorcycles", "Scooters", "Bicycles", "Spare Parts" }, Status = "Active" },
+                new AdCategory { Name = "Properties", Emoji = "🏠", Subcategories = new List<string> { "Apartments", "Houses", "Land", "Commercial", "PG/Hostels" }, Status = "Active" },
+                new AdCategory { Name = "Jobs", Emoji = "💼", Subcategories = new List<string> { "IT/Software", "Sales", "Marketing", "Education", "Healthcare" }, Status = "Active" },
+                new AdCategory { Name = "Services", Emoji = "🔧", Subcategories = new List<string> { "Home Services", "Education", "Health & Fitness", "Events", "Professional" }, Status = "Active" },
+                new AdCategory { Name = "Fashion", Emoji = "👕", Subcategories = new List<string> { "Men", "Women", "Kids", "Accessories", "Footwear" }, Status = "Active" },
+                new AdCategory { Name = "Home & Living", Emoji = "🛋️", Subcategories = new List<string> { "Furniture", "Decor", "Kitchen", "Garden", "Appliances" }, Status = "Active" },
+                new AdCategory { Name = "Pets", Emoji = "🐕", Subcategories = new List<string> { "Dogs", "Cats", "Birds", "Fish", "Pet Supplies" }, Status = "Active" },
+                new AdCategory { Name = "Books & Hobbies", Emoji = "📚", Subcategories = new List<string> { "Books", "Musical Instruments", "Sports Equipment", "Games", "Collectibles" }, Status = "Active" },
+                new AdCategory { Name = "Electronics & Appliances", Emoji = "📺", Subcategories = new List<string> { "TVs", "Refrigerators", "Washing Machines", "ACs", "Kitchen Appliances" }, Status = "Active" }
+            };
+
+            await _context.AdCategories.InsertManyAsync(defaultCategories);
+            return Ok(new { message = $"Seeded {defaultCategories.Length} ad categories" });
+        }
+
+        [HttpGet("states")]
+        [Authorize]
+        public async Task<IActionResult> GetStates()
+        {
+            var states = await _context.States.Find(s => s.IsActive).SortBy(s => s.DisplaySequence).ToListAsync();
+            return Ok(states);
+        }
+
+        [HttpPost("states")]
+        [Authorize]
+        public async Task<IActionResult> CreateState([FromBody] State state)
+        {
+            var validationSettings = await _validationService.GetValidationSettingsAsync("State");
+            if (validationSettings.ContainsKey("name"))
+            {
+                var nameResult = _validationService.ValidateField("name", state.Name, validationSettings["name"]);
+                if (!nameResult.IsValid)
+                {
+                    return BadRequest(new { message = "Validation failed", errors = new { name = nameResult.Errors } });
+                }
+            }
+
+            state.Id = null;
+            state.CreatedAt = DateTime.UtcNow;
+            await _context.States.InsertOneAsync(state);
+            return Ok(new { message = "State created successfully", state });
+        }
+
+        [HttpPut("states/{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateState(string id, [FromBody] State state)
+        {
+            var validationSettings = await _validationService.GetValidationSettingsAsync("State");
+            if (validationSettings.ContainsKey("name"))
+            {
+                var nameResult = _validationService.ValidateField("name", state.Name, validationSettings["name"]);
+                if (!nameResult.IsValid)
+                {
+                    return BadRequest(new { message = "Validation failed", errors = new { name = nameResult.Errors } });
+                }
+            }
+
+            state.Id = id;
+            var result = await _context.States.ReplaceOneAsync(s => s.Id == id, state);
+            if (result.MatchedCount == 0)
+            {
+                return NotFound(new { message = "State not found" });
+            }
+            return Ok(new { message = "State updated successfully" });
+        }
+
+        [HttpDelete("states/{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteState(string id)
+        {
+            var result = await _context.States.DeleteOneAsync(s => s.Id == id);
+            if (result.DeletedCount == 0)
+            {
+                return NotFound(new { message = "State not found" });
+            }
+            return Ok(new { message = "State deleted successfully" });
+        }
+
+        [HttpGet("cities")]
+        [Authorize]
+        public async Task<IActionResult> GetCities([FromQuery] string? stateCode = null)
+        {
+            var filter = stateCode != null 
+                ? Builders<City>.Filter.And(
+                    Builders<City>.Filter.Eq(c => c.StateCode, stateCode),
+                    Builders<City>.Filter.Eq(c => c.IsActive, true))
+                : Builders<City>.Filter.Eq(c => c.IsActive, true);
+            
+            var cities = await _context.Cities.Find(filter).SortBy(c => c.DisplaySequence).ToListAsync();
+            return Ok(cities);
+        }
+
+        [HttpPost("cities")]
+        [Authorize]
+        public async Task<IActionResult> CreateCity([FromBody] City city)
+        {
+            var validationSettings = await _validationService.GetValidationSettingsAsync("City");
+            if (validationSettings.ContainsKey("name"))
+            {
+                var nameResult = _validationService.ValidateField("name", city.Name, validationSettings["name"]);
+                if (!nameResult.IsValid)
+                {
+                    return BadRequest(new { message = "Validation failed", errors = new { name = nameResult.Errors } });
+                }
+            }
+
+            city.Id = null;
+            city.CreatedAt = DateTime.UtcNow;
+            await _context.Cities.InsertOneAsync(city);
+            return Ok(new { message = "City created successfully", city });
+        }
+
+        [HttpPut("cities/{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateCity(string id, [FromBody] City city)
+        {
+            var validationSettings = await _validationService.GetValidationSettingsAsync("City");
+            if (validationSettings.ContainsKey("name"))
+            {
+                var nameResult = _validationService.ValidateField("name", city.Name, validationSettings["name"]);
+                if (!nameResult.IsValid)
+                {
+                    return BadRequest(new { message = "Validation failed", errors = new { name = nameResult.Errors } });
+                }
+            }
+
+            city.Id = id;
+            var result = await _context.Cities.ReplaceOneAsync(c => c.Id == id, city);
+            if (result.MatchedCount == 0)
+            {
+                return NotFound(new { message = "City not found" });
+            }
+            return Ok(new { message = "City updated successfully" });
+        }
+
+        [HttpDelete("cities/{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteCity(string id)
+        {
+            var result = await _context.Cities.DeleteOneAsync(c => c.Id == id);
+            if (result.DeletedCount == 0)
+            {
+                return NotFound(new { message = "City not found" });
+            }
+            return Ok(new { message = "City deleted successfully" });
+        }
+
+        [HttpGet("ad-conditions")]
+        [Authorize]
+        public async Task<IActionResult> GetAdConditions()
+        {
+            var conditions = await _context.AdConditions.Find(c => c.IsActive).SortBy(c => c.DisplaySequence).ToListAsync();
+            return Ok(conditions);
+        }
+
+        [HttpPost("ad-conditions")]
+        [Authorize]
+        public async Task<IActionResult> CreateAdCondition([FromBody] AdCondition condition)
+        {
+            var validationSettings = await _validationService.GetValidationSettingsAsync("AdCondition");
+            if (validationSettings.ContainsKey("name"))
+            {
+                var nameResult = _validationService.ValidateField("name", condition.Name, validationSettings["name"]);
+                if (!nameResult.IsValid)
+                {
+                    return BadRequest(new { message = "Validation failed", errors = new { name = nameResult.Errors } });
+                }
+            }
+
+            condition.Id = null;
+            condition.CreatedAt = DateTime.UtcNow;
+            await _context.AdConditions.InsertOneAsync(condition);
+            return Ok(new { message = "Condition created successfully", condition });
+        }
+
+        [HttpPut("ad-conditions/{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateAdCondition(string id, [FromBody] AdCondition condition)
+        {
+            var validationSettings = await _validationService.GetValidationSettingsAsync("AdCondition");
+            if (validationSettings.ContainsKey("name"))
+            {
+                var nameResult = _validationService.ValidateField("name", condition.Name, validationSettings["name"]);
+                if (!nameResult.IsValid)
+                {
+                    return BadRequest(new { message = "Validation failed", errors = new { name = nameResult.Errors } });
+                }
+            }
+
+            condition.Id = id;
+            var result = await _context.AdConditions.ReplaceOneAsync(c => c.Id == id, condition);
+            if (result.MatchedCount == 0)
+            {
+                return NotFound(new { message = "Condition not found" });
+            }
+            return Ok(new { message = "Condition updated successfully" });
+        }
+
+        [HttpDelete("ad-conditions/{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteAdCondition(string id)
+        {
+            var result = await _context.AdConditions.DeleteOneAsync(c => c.Id == id);
+            if (result.DeletedCount == 0)
+            {
+                return NotFound(new { message = "Condition not found" });
+            }
+            return Ok(new { message = "Condition deleted successfully" });
+        }
+
+        [HttpPost("seed-location-data")]
+        [Authorize]
+        public async Task<IActionResult> SeedLocationData()
+        {
+            var seedData = new LocationSeedData(_context);
+            await seedData.SeedAsync();
+            return Ok(new { message = "Location data seeded successfully" });
         }
 
         // User Activate/Deactivate

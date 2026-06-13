@@ -117,6 +117,21 @@ namespace BusinessPlatform.API.Controllers
             return Ok(categoriesWithActiveProducts);
         }
 
+        [HttpGet("subcategories")]
+        public async Task<IActionResult> GetSubcategories([FromQuery] string categoryId = null)
+        {
+            if (!string.IsNullOrEmpty(categoryId))
+            {
+                var subcategories = await _context.Subcategories.Find(s => s.CategoryId == categoryId).ToListAsync();
+                var sortedSubcategories = subcategories.OrderBy(s => s.DisplaySequence).ToList();
+                return Ok(sortedSubcategories);
+            }
+
+            var allSubcategories = await _context.Subcategories.Find(_ => true).ToListAsync();
+            var sortedAllSubcategories = allSubcategories.OrderBy(s => s.DisplaySequence).ToList();
+            return Ok(sortedAllSubcategories);
+        }
+
         [HttpPost("categories")]
         [Authorize]
         public async Task<IActionResult> CreateCategory([FromBody] Category category)

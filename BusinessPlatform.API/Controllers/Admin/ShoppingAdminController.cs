@@ -110,6 +110,104 @@ namespace BusinessPlatform.API.Controllers.Admin
             return Ok(new { message = "Category and all its products deleted successfully" });
         }
 
+        // Subcategories CRUD
+        [HttpGet("subcategories")]
+        public async Task<IActionResult> GetSubcategories()
+        {
+            var subcategories = await _context.Subcategories.Find(_ => true).ToListAsync();
+            var sortedSubcategories = subcategories.OrderBy(s => s.DisplaySequence).ToList();
+            return Ok(sortedSubcategories);
+        }
+
+        [HttpGet("subcategories/category/{categoryId}")]
+        public async Task<IActionResult> GetSubcategoriesByCategory(string categoryId)
+        {
+            var subcategories = await _context.Subcategories.Find(s => s.CategoryId == categoryId).ToListAsync();
+            var sortedSubcategories = subcategories.OrderBy(s => s.DisplaySequence).ToList();
+            return Ok(sortedSubcategories);
+        }
+
+        [HttpGet("subcategories/next-sequence/{categoryId}")]
+        public async Task<IActionResult> GetNextSubcategorySequence(string categoryId)
+        {
+            var lastSubcategory = await _context.Subcategories
+                .Find(s => s.CategoryId == categoryId)
+                .SortByDescending(s => s.DisplaySequence)
+                .FirstOrDefaultAsync();
+
+            var nextSequence = (lastSubcategory?.DisplaySequence ?? 0) + 1;
+            return Ok(new { nextSequence });
+        }
+
+        [HttpPost("subcategories")]
+        public async Task<IActionResult> CreateSubcategory([FromBody] Subcategory subcategory)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { message = "Validation failed", errors = ModelState });
+            }
+
+            subcategory.Id = null;
+            subcategory.CreatedAt = DateTime.UtcNow;
+            await _context.Subcategories.InsertOneAsync(subcategory);
+            return Ok(new { message = "Subcategory created successfully", subcategory });
+        }
+
+        [HttpPut("subcategories/{id}")]
+        public async Task<IActionResult> UpdateSubcategory(string id, [FromBody] Subcategory subcategory)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { message = "Validation failed", errors = ModelState });
+            }
+
+            var existingSubcategory = await _context.Subcategories.Find(s => s.Id == id).FirstOrDefaultAsync();
+            if (existingSubcategory == null)
+            {
+                return NotFound(new { message = "Subcategory not found" });
+            }
+
+            string oldSubcategoryName = existingSubcategory.Name;
+            string newSubcategoryName = subcategory.Name;
+
+            subcategory.Id = id;
+            var result = await _context.Subcategories.ReplaceOneAsync(s => s.Id == id, subcategory);
+            if (result.MatchedCount == 0)
+            {
+                return NotFound(new { message = "Subcategory not found" });
+            }
+
+            // If subcategory name changed, update all products with the old subcategory name
+            if (oldSubcategoryName != newSubcategoryName)
+            {
+                var update = Builders<Product>.Update.Set(p => p.SubcategoryName, newSubcategoryName);
+                await _context.Products.UpdateManyAsync(p => p.SubcategoryName == oldSubcategoryName, update);
+            }
+
+            return Ok(new { message = "Subcategory updated successfully" });
+        }
+
+        [HttpDelete("subcategories/{id}")]
+        public async Task<IActionResult> DeleteSubcategory(string id)
+        {
+            var subcategory = await _context.Subcategories.Find(s => s.Id == id).FirstOrDefaultAsync();
+            if (subcategory == null)
+            {
+                return NotFound(new { message = "Subcategory not found" });
+            }
+
+            // Delete all products with this subcategory name
+            await _context.Products.DeleteManyAsync(p => p.SubcategoryName == subcategory.Name);
+
+            // Delete the subcategory
+            var result = await _context.Subcategories.DeleteOneAsync(s => s.Id == id);
+            if (result.DeletedCount == 0)
+            {
+                return NotFound(new { message = "Subcategory not found" });
+            }
+            return Ok(new { message = "Subcategory and all its products deleted successfully" });
+        }
+
         // Products CRUD
         [HttpGet("products")]
         public async Task<IActionResult> GetProducts()

@@ -39,6 +39,86 @@ namespace BusinessPlatform.API.Models
 
 
 
+        [BsonElement("icon")]
+
+        public string Icon { get; set; } = string.Empty;
+
+
+
+        [BsonElement("status")]
+
+        public string Status { get; set; } = "Active";
+
+
+
+        [BsonElement("displaySequence")]
+
+        [Required(ErrorMessage = "Display sequence is required")]
+
+        [RegularExpression(@"^\d+$", ErrorMessage = "Display sequence must be numeric only")]
+
+        [Range(0, int.MaxValue, ErrorMessage = "Display sequence must be a positive integer")]
+
+        public int DisplaySequence { get; set; } = 0;
+
+
+
+        [BsonElement("createdAt")]
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    }
+
+
+
+    public class Subcategory
+
+    {
+
+        [BsonId]
+
+        [BsonRepresentation(BsonType.ObjectId)]
+
+        public string? Id { get; set; }
+
+
+
+        [BsonElement("categoryId")]
+
+        [Required(ErrorMessage = "Category is required")]
+
+        public string CategoryId { get; set; } = string.Empty;
+
+
+
+        [BsonElement("categoryName")]
+
+        public string CategoryName { get; set; } = string.Empty;
+
+
+
+        [BsonElement("name")]
+
+        [Required(ErrorMessage = "Name is required")]
+
+        [StringLength(100, ErrorMessage = "Name must not exceed 100 characters")]
+
+        public string Name { get; set; } = string.Empty;
+
+
+
+        [BsonElement("description")]
+
+        public string Description { get; set; } = string.Empty;
+
+
+
+        [BsonElement("imageUrl")]
+
+        public string ImageUrl { get; set; } = string.Empty;
+
+
+
         [BsonElement("status")]
 
         public string Status { get; set; } = "Active";
@@ -110,6 +190,18 @@ namespace BusinessPlatform.API.Models
         [BsonElement("categoryName")]
         [Required(ErrorMessage = "Category is required")]
         public string CategoryName { get; set; } = string.Empty;
+
+
+
+        [BsonElement("subcategoryId")]
+
+        public string? SubcategoryId { get; set; }
+
+
+
+        [BsonElement("subcategoryName")]
+
+        public string SubcategoryName { get; set; } = string.Empty;
 
 
 
@@ -514,32 +606,6 @@ namespace BusinessPlatform.API.Models
         [BsonElement("createdAt")]
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    }
-
-
-
-    public class State
-
-    {
-
-        [BsonId]
-
-        [BsonRepresentation(BsonType.ObjectId)]
-
-        public string? Id { get; set; }
-
-
-
-        [BsonElement("name")]
-
-        public string Name { get; set; } = string.Empty;
-
-
-
-        [BsonElement("code")]
-
-        public string Code { get; set; } = string.Empty;
 
     }
 

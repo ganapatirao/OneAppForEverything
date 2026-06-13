@@ -19,6 +19,7 @@ namespace BusinessPlatform.API.Services
         // Collections
         public IMongoCollection<User> Users => _database.GetCollection<User>("Users");
         public IMongoCollection<Category> Categories => _database.GetCollection<Category>("Categories");
+        public IMongoCollection<Subcategory> Subcategories => _database.GetCollection<Subcategory>("Subcategories");
         public IMongoCollection<Product> Products => _database.GetCollection<Product>("Products");
         public IMongoCollection<ShoppingCartItem> ShoppingCartItems => _database.GetCollection<ShoppingCartItem>("ShoppingCartItems");
         public IMongoCollection<ShoppingOrder> ShoppingOrders => _database.GetCollection<ShoppingOrder>("ShoppingOrders");
@@ -36,6 +37,8 @@ namespace BusinessPlatform.API.Services
         public IMongoCollection<Booking> Bookings => _database.GetCollection<Booking>("Bookings");
         public IMongoCollection<State> States => _database.GetCollection<State>("States");
         public IMongoCollection<District> Districts => _database.GetCollection<District>("Districts");
+        public IMongoCollection<City> Cities => _database.GetCollection<City>("Cities");
+        public IMongoCollection<AdCondition> AdConditions => _database.GetCollection<AdCondition>("AdConditions");
         public IMongoCollection<ValidationSetting> ValidationSettings => _database.GetCollection<ValidationSetting>("ValidationSettings");
     }
 }

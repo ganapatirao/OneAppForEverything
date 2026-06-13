@@ -1,8 +1,10 @@
 using BusinessPlatform.API.Data;
 using BusinessPlatform.API.Models;
 using BusinessPlatform.API.Services;
+using BusinessPlatform.API.Seed;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
+using ValidationSeed = BusinessPlatform.API.Seed.ValidationSeedData;
 
 namespace BusinessPlatform.API.Controllers
 {
@@ -54,22 +56,77 @@ namespace BusinessPlatform.API.Controllers
         }
 
         [HttpPost("seed")]
-        public async Task<ActionResult> SeedValidationData()
+        public async Task<ActionResult> SeedValidationData([FromBody] string entityType = "all")
         {
             try
             {
-                var seedData = ValidationSeedData.GetCheckoutValidationSettings();
-                
-                // Check if data already exists
-                var existingCount = await _context.ValidationSettings.CountDocumentsAsync(Builders<ValidationSetting>.Filter.Eq(v => v.EntityType, "checkout"));
-                
-                if (existingCount == 0)
+                if (entityType == "all" || entityType == "checkout")
                 {
-                    await _context.ValidationSettings.InsertManyAsync(seedData);
-                    return Ok(new { message = $"Seeded {seedData.Count} validation settings" });
+                    var checkoutSettings = ValidationSeed.GetCheckoutValidationSettings();
+                    var existingCheckoutCount = await _context.ValidationSettings.CountDocumentsAsync(Builders<ValidationSetting>.Filter.Eq(v => v.EntityType, "checkout"));
+                    
+                    if (existingCheckoutCount == 0)
+                    {
+                        await _context.ValidationSettings.InsertManyAsync(checkoutSettings);
+                    }
                 }
                 
-                return Ok(new { message = "Validation settings already exist" });
+                if (entityType == "all" || entityType == "advertisement")
+                {
+                    var adSettings = ValidationSeed.GetAdvertisementValidationSettings();
+                    var existingAdCount = await _context.ValidationSettings.CountDocumentsAsync(Builders<ValidationSetting>.Filter.Eq(v => v.EntityType, "Advertisement"));
+                    
+                    if (existingAdCount == 0)
+                    {
+                        await _context.ValidationSettings.InsertManyAsync(adSettings);
+                    }
+                }
+                
+                if (entityType == "all" || entityType == "adcategory")
+                {
+                    var adCategorySettings = ValidationSeed.GetAdCategoryValidationSettings();
+                    var existingAdCategoryCount = await _context.ValidationSettings.CountDocumentsAsync(Builders<ValidationSetting>.Filter.Eq(v => v.EntityType, "AdCategory"));
+                    
+                    if (existingAdCategoryCount == 0)
+                    {
+                        await _context.ValidationSettings.InsertManyAsync(adCategorySettings);
+                    }
+                }
+                
+                if (entityType == "all" || entityType == "state")
+                {
+                    var stateSettings = ValidationSeed.GetStateValidationSettings();
+                    var existingStateCount = await _context.ValidationSettings.CountDocumentsAsync(Builders<ValidationSetting>.Filter.Eq(v => v.EntityType, "State"));
+                    
+                    if (existingStateCount == 0)
+                    {
+                        await _context.ValidationSettings.InsertManyAsync(stateSettings);
+                    }
+                }
+                
+                if (entityType == "all" || entityType == "city")
+                {
+                    var citySettings = ValidationSeed.GetCityValidationSettings();
+                    var existingCityCount = await _context.ValidationSettings.CountDocumentsAsync(Builders<ValidationSetting>.Filter.Eq(v => v.EntityType, "City"));
+                    
+                    if (existingCityCount == 0)
+                    {
+                        await _context.ValidationSettings.InsertManyAsync(citySettings);
+                    }
+                }
+                
+                if (entityType == "all" || entityType == "adcondition")
+                {
+                    var adConditionSettings = ValidationSeed.GetAdConditionValidationSettings();
+                    var existingAdConditionCount = await _context.ValidationSettings.CountDocumentsAsync(Builders<ValidationSetting>.Filter.Eq(v => v.EntityType, "AdCondition"));
+                    
+                    if (existingAdConditionCount == 0)
+                    {
+                        await _context.ValidationSettings.InsertManyAsync(adConditionSettings);
+                    }
+                }
+                
+                return Ok(new { message = $"Validation settings seeded successfully for {entityType}" });
             }
             catch (Exception ex)
             {

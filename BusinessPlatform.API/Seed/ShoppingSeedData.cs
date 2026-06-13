@@ -24,6 +24,7 @@ namespace BusinessPlatform.API.Seed
         public async Task SeedAsync()
         {
             await _context.Categories.DeleteManyAsync(_ => true);
+            await _context.Subcategories.DeleteManyAsync(_ => true);
             await _context.Products.DeleteManyAsync(_ => true);
             await _context.ShoppingCartItems.DeleteManyAsync(_ => true);
             await _context.ShoppingOrders.DeleteManyAsync(_ => true);
@@ -31,22 +32,56 @@ namespace BusinessPlatform.API.Seed
             // Seed Categories
             var categories = new[]
             {
-                new Category { Name = "Electronics", Description = "Electronic devices and gadgets", ImageUrl = GenerateSvgDataUrl("#3B82F6", "Electronics"), DisplaySequence = 1 },
-                new Category { Name = "Clothing", Description = "Fashion and apparel", ImageUrl = GenerateSvgDataUrl("#EC4899", "Clothing"), DisplaySequence = 2 },
-                new Category { Name = "Books", Description = "Books and educational materials", ImageUrl = GenerateSvgDataUrl("#8B5CF6", "Books"), DisplaySequence = 3 },
-                new Category { Name = "Home & Kitchen", Description = "Home appliances and kitchen items", ImageUrl = GenerateSvgDataUrl("#F59E0B", "Home & Kitchen"), DisplaySequence = 4 },
-                new Category { Name = "Sports", Description = "Sports equipment and accessories", ImageUrl = GenerateSvgDataUrl("#10B981", "Sports"), DisplaySequence = 5 }
+                new Category { Name = "Electronics", Description = "Electronic devices and gadgets", ImageUrl = GenerateSvgDataUrl("#3B82F6", "Electronics"), Icon = "📱", DisplaySequence = 1 },
+                new Category { Name = "Clothing", Description = "Fashion and apparel", ImageUrl = GenerateSvgDataUrl("#EC4899", "Clothing"), Icon = "👕", DisplaySequence = 2 },
+                new Category { Name = "Books", Description = "Books and educational materials", ImageUrl = GenerateSvgDataUrl("#8B5CF6", "Books"), Icon = "📚", DisplaySequence = 3 },
+                new Category { Name = "Home & Kitchen", Description = "Home appliances and kitchen items", ImageUrl = GenerateSvgDataUrl("#F59E0B", "Home & Kitchen"), Icon = "🏠", DisplaySequence = 4 },
+                new Category { Name = "Sports", Description = "Sports equipment and accessories", ImageUrl = GenerateSvgDataUrl("#10B981", "Sports"), Icon = "⚽", DisplaySequence = 5 }
             };
             await _context.Categories.InsertManyAsync(categories);
 
+            // Seed Subcategories
+            var electronicsCategory = categories.First(c => c.Name == "Electronics");
+            var clothingCategory = categories.First(c => c.Name == "Clothing");
+            var booksCategory = categories.First(c => c.Name == "Books");
+            var homeKitchenCategory = categories.First(c => c.Name == "Home & Kitchen");
+            var sportsCategory = categories.First(c => c.Name == "Sports");
+
+            var subcategories = new[]
+            {
+                new Subcategory { CategoryId = electronicsCategory.Id, CategoryName = "Electronics", Name = "Audio", Description = "Headphones, speakers, and audio equipment", ImageUrl = GenerateSvgDataUrl("#3B82F6", "Audio"), DisplaySequence = 1 },
+                new Subcategory { CategoryId = electronicsCategory.Id, CategoryName = "Electronics", Name = "Wearables", Description = "Smartwatches, fitness trackers, and accessories", ImageUrl = GenerateSvgDataUrl("#10B981", "Wearables"), DisplaySequence = 2 },
+                new Subcategory { CategoryId = electronicsCategory.Id, CategoryName = "Electronics", Name = "TV & Video", Description = "Televisions, projectors, and video equipment", ImageUrl = GenerateSvgDataUrl("#3B82F6", "TV"), DisplaySequence = 3 },
+                new Subcategory { CategoryId = clothingCategory.Id, CategoryName = "Clothing", Name = "Men's Wear", Description = "Clothing for men", ImageUrl = GenerateSvgDataUrl("#EC4899", "Men"), DisplaySequence = 1 },
+                new Subcategory { CategoryId = clothingCategory.Id, CategoryName = "Clothing", Name = "Women's Wear", Description = "Clothing for women", ImageUrl = GenerateSvgDataUrl("#F472B6", "Women"), DisplaySequence = 2 },
+                new Subcategory { CategoryId = booksCategory.Id, CategoryName = "Books", Name = "Programming", Description = "Programming and development books", ImageUrl = GenerateSvgDataUrl("#8B5CF6", "Programming"), DisplaySequence = 1 },
+                new Subcategory { CategoryId = booksCategory.Id, CategoryName = "Books", Name = "Fiction", Description = "Fiction and literature books", ImageUrl = GenerateSvgDataUrl("#A78BFA", "Fiction"), DisplaySequence = 2 },
+                new Subcategory { CategoryId = homeKitchenCategory.Id, CategoryName = "Home & Kitchen", Name = "Kitchen Appliances", Description = "Kitchen appliances and tools", ImageUrl = GenerateSvgDataUrl("#F59E0B", "Kitchen"), DisplaySequence = 1 },
+                new Subcategory { CategoryId = sportsCategory.Id, CategoryName = "Sports", Name = "Footwear", Description = "Sports shoes and footwear", ImageUrl = GenerateSvgDataUrl("#10B981", "Footwear"), DisplaySequence = 1 },
+                new Subcategory { CategoryId = sportsCategory.Id, CategoryName = "Sports", Name = "Fitness Equipment", Description = "Fitness and exercise equipment", ImageUrl = GenerateSvgDataUrl("#34D399", "Fitness"), DisplaySequence = 2 }
+            };
+            await _context.Subcategories.InsertManyAsync(subcategories);
+
             // Seed Products
+            var audioSubcategory = subcategories.First(s => s.Name == "Audio");
+            var wearablesSubcategory = subcategories.First(s => s.Name == "Wearables");
+            var tvSubcategory = subcategories.First(s => s.Name == "TV & Video");
+            var menWearSubcategory = subcategories.First(s => s.Name == "Men's Wear");
+            var programmingSubcategory = subcategories.First(s => s.Name == "Programming");
+            var kitchenSubcategory = subcategories.First(s => s.Name == "Kitchen Appliances");
+            var footwearSubcategory = subcategories.First(s => s.Name == "Footwear");
+            var fitnessSubcategory = subcategories.First(s => s.Name == "Fitness Equipment");
+
             var products = new[]
             {
                 new Product {
                     Name = "Wireless Bluetooth Headphones",
                     Description = "Experience premium audio quality with these state-of-the-art wireless Bluetooth headphones featuring advanced noise cancellation technology. Designed for audiophiles and music enthusiasts, these headphones deliver crystal-clear sound with deep bass and crisp highs. The 30-hour battery life ensures you can enjoy your music all day without interruption. Perfect for commuting, working out, or relaxing at home.",
                     Price = 12499m,
+                    CategoryId = electronicsCategory.Id,
                     CategoryName = "Electronics",
+                    SubcategoryId = audioSubcategory.Id,
+                    SubcategoryName = "Audio",
                     Stock = 50,
                     Seller = "John Smith",
                     Rating = 4.5,
@@ -73,7 +108,10 @@ namespace BusinessPlatform.API.Seed
                     Name = "Smart Watch Series 5",
                     Description = "Stay connected and track your health with this advanced smartwatch featuring comprehensive health monitoring, built-in GPS, and water resistance up to 50 meters. Monitor your heart rate, sleep patterns, and daily activities with precision. The vibrant AMOLED display is always visible, and with 7-day battery life, you can go a week without charging. Compatible with both iOS and Android devices.",
                     Price = 24999m,
+                    CategoryId = electronicsCategory.Id,
                     CategoryName = "Electronics",
+                    SubcategoryId = wearablesSubcategory.Id,
+                    SubcategoryName = "Wearables",
                     Stock = 30,
                     Seller = "John Smith",
                     Rating = 4.8,
@@ -100,7 +138,10 @@ namespace BusinessPlatform.API.Seed
                     Name = "Premium Cotton T-Shirt",
                     Description = "Crafted from 100% organic cotton, this premium t-shirt offers unparalleled comfort and durability. The breathable fabric keeps you cool in summer and warm in winter. Pre-shrunk to maintain its fit wash after wash. Available in multiple colors to suit your style. Perfect for casual wear, gym sessions, or as a base layer.",
                     Price = 2499m,
+                    CategoryId = clothingCategory.Id,
                     CategoryName = "Clothing",
+                    SubcategoryId = menWearSubcategory.Id,
+                    SubcategoryName = "Men's Wear",
                     Stock = 200,
                     Seller = "Jane Doe",
                     Rating = 4.2,
@@ -130,7 +171,10 @@ namespace BusinessPlatform.API.Seed
                     Name = "Running Shoes Pro",
                     Description = "Engineered for serious runners, these professional running shoes feature advanced cushioning technology that absorbs impact and provides energy return. The lightweight mesh upper ensures breathability, while the durable rubber outsole offers excellent traction on various surfaces. Ideal for marathon training, daily running, or gym workouts.",
                     Price = 10999m,
+                    CategoryId = sportsCategory.Id,
                     CategoryName = "Sports",
+                    SubcategoryId = footwearSubcategory.Id,
+                    SubcategoryName = "Footwear",
                     Stock = 75,
                     Seller = "Bob Wilson",
                     Rating = 4.6,
@@ -160,7 +204,10 @@ namespace BusinessPlatform.API.Seed
                     Name = "Programming Guide: C#",
                     Description = "Master C# programming with this comprehensive guide covering everything from basics to advanced concepts. Perfect for beginners starting their coding journey and experienced developers looking to enhance their skills. Includes real-world examples, best practices, and industry-standard patterns. Learn to build robust applications with .NET framework.",
                     Price = 4199m,
+                    CategoryId = booksCategory.Id,
                     CategoryName = "Books",
+                    SubcategoryId = programmingSubcategory.Id,
+                    SubcategoryName = "Programming",
                     Stock = 100,
                     Seller = "Alice Brown",
                     Rating = 4.7,
@@ -187,7 +234,10 @@ namespace BusinessPlatform.API.Seed
                     Name = "4K Smart TV 55 inch",
                     Description = "Transform your entertainment experience with this stunning 55-inch 4K Ultra HD smart TV. Featuring Dolby Vision HDR and Dolby Atmos for immersive audio. Built-in streaming apps give you access to Netflix, Prime Video, Disney+, and more. Voice control with Google Assistant makes navigation effortless. Perfect for movie nights, gaming, and sports.",
                     Price = 49999m,
+                    CategoryId = electronicsCategory.Id,
                     CategoryName = "Electronics",
+                    SubcategoryId = tvSubcategory.Id,
+                    SubcategoryName = "TV & Video",
                     Stock = 25,
                     Seller = "John Smith",
                     Rating = 4.4,
@@ -214,7 +264,10 @@ namespace BusinessPlatform.API.Seed
                     Name = "Coffee Maker Deluxe",
                     Description = "Wake up to the perfect cup of coffee with this programmable coffee maker featuring a built-in conical burr grinder and thermal carafe. Grind fresh beans for maximum flavor and aroma. The 24-hour programmable timer lets you wake up to freshly brewed coffee. The thermal carafe keeps coffee hot for hours without burning. Easy to clean and maintain.",
                     Price = 7499m,
+                    CategoryId = homeKitchenCategory.Id,
                     CategoryName = "Home & Kitchen",
+                    SubcategoryId = kitchenSubcategory.Id,
+                    SubcategoryName = "Kitchen Appliances",
                     Stock = 60,
                     Seller = "Jane Doe",
                     Rating = 4.3,
@@ -242,7 +295,10 @@ namespace BusinessPlatform.API.Seed
                     Name = "Yoga Mat Premium",
                     Description = "Practice yoga in comfort and style with this extra-thick premium yoga mat. The non-slip surface ensures stability during challenging poses, while the cushioned padding protects your joints. Includes a convenient carrying strap for easy transport. Eco-friendly materials make it safe for you and the environment. Perfect for home practice, studio classes, or outdoor sessions.",
                     Price = 3499m,
+                    CategoryId = sportsCategory.Id,
                     CategoryName = "Sports",
+                    SubcategoryId = fitnessSubcategory.Id,
+                    SubcategoryName = "Fitness Equipment",
                     Stock = 150,
                     Seller = "Bob Wilson",
                     Rating = 4.5,
